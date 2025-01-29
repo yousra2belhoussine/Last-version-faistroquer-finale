@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .admin-logo {
+        @apply h-12 w-auto;
+    }
+
+    .admin-nav {
+        @apply bg-[#157e74] text-white;
+    }
+
+    .admin-button {
+        @apply bg-[#157e74] hover:bg-[#126b63] text-white font-bold py-2 px-4 rounded focus:ring focus:ring-opacity-50;
+    }
+
+    .admin-input {
+        @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:ring focus:ring-opacity-50;
+    }
+
+    .admin-label {
+        @apply block text-gray-700 text-sm font-bold mb-2;
+    }
+
+    .admin-card {
+        @apply bg-white overflow-hidden shadow-sm sm:rounded-lg p-6;
+    }
+} 
