@@ -153,7 +153,7 @@
                                 <!-- Messages will be loaded here -->
                             </div>
 
-                            <form id="message-form" class="mt-4">
+                            <form id="message-form" class="mt-4" action="{{ route('messages.store.proposition', $proposition) }}" method="POST">
                                 <div class="flex items-start space-x-4">
                                     <div class="min-w-0 flex-1">
                                         <div class="relative">
@@ -182,8 +182,9 @@
                             <h2 class="text-lg font-medium text-gray-900 mb-4">{{ __('Ad Details') }}</h2>
                             <div class="space-y-4">
                                 @if($proposition->ad->images->isNotEmpty())
-                                    <img src="{{ Storage::url($proposition->ad->images->first()->path) }}" alt="{{ $proposition->ad->title }}" class="w-full h-48 object-cover rounded-lg">
-                                @endif
+
+                                    <img src="{{ asset('storage/'.$proposition->ad->images->first()->image_path) }}" alt="{{ $proposition->ad->title }}" class="w-full h-48 object-cover rounded-lg">
+                                    @endif
 
                                 <h3 class="text-base font-medium text-gray-900">{{ $proposition->ad->title }}</h3>
                                 <p class="text-sm text-gray-600">{{ Str::limit($proposition->ad->description, 150) }}</p>

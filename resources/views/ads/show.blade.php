@@ -36,7 +36,7 @@
                         <!-- Images avec effet carousel -->
                         <div class="bg-gradient-to-br from-[#35a79b]/5 to-[#79d8b2]/5 rounded-xl overflow-hidden mb-6">
                             @if($ad->images && $ad->images->count() > 0)
-                                <div class="relative">
+                                <div class="relative"> 
                                     @foreach($ad->images as $image)
                                         <img src="{{ asset('storage/' . $image->image_path) }}" 
                                              alt="Image de l'annonce" 

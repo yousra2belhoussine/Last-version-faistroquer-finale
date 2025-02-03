@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('sender_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('receiver_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('exchange_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('proposition_id')->nullable()->constrained('propositions')->onDelete('cascade'); // Ajout de la colonne proposition_id
             $table->text('content');
             $table->timestamp('read_at')->nullable();
             $table->timestamps();

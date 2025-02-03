@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/propositions/{proposition}/complete', [PropositionController::class, 'complete'])->name('propositions.complete');
     Route::patch('/propositions/{proposition}/fail', [PropositionController::class, 'fail'])->name('propositions.fail');
     Route::patch('/propositions/{proposition}/update-meeting', [PropositionController::class, 'updateMeeting'])->name('propositions.update-meeting');
+    Route::post('/propositions/{proposition}/messages', [MessageController::class, 'store'])->name('messages.store.proposition');
 });
 
 // Ad routes

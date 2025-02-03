@@ -15,11 +15,11 @@ class PropositionController extends Controller
     public function store(Request $request, Ad $ad)
     {
         $validated = $request->validate([
-            'offer' => 'required|string',
+            'offer' => 'required|string', 
             'message' => 'nullable|string',
             'online_exchange' => 'boolean',
-            'meeting_location' => 'required_if:online_exchange,false|string',
-            'meeting_date' => 'required_if:online_exchange,false|date',
+            'meeting_location' => 'required_if:online_exchange,false|nullable|string',
+            'meeting_date' => 'required_if:online_exchange,false|nullable|date',
             'ad_id' => 'required|exists:ads,id',
         ]);
 

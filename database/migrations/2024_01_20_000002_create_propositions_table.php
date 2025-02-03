@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignId('ad_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['pending', 'accepted', 'rejected', 'cancelled', 'completed'])->default('pending');
             $table->text('message')->nullable();
-            $table->string('meeting_location'); // Assurez-vous que cette colonne existe
-            $table->dateTime('meeting_date');
+            $table->string('meeting_location')->nullable(); // Assurez-vous que cette colonne existe
+            $table->dateTime('meeting_date')->nullable();
             $table->boolean('online_exchange')->default(false);
             $table->decimal('price', 10, 2)->nullable();
             $table->timestamp('accepted_at')->nullable();

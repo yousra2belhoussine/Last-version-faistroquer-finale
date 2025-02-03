@@ -66,4 +66,8 @@ class Proposition extends Model
     {
         return $this->status === 'rejected';
     }
+
+    public function isCompleted(){
+        return $this->status === 'completed';
+    }
 } 
