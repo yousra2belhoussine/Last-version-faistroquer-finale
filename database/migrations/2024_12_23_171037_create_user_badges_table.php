@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('badge_id')->constrained()->onDelete('cascade');
             $table->timestamp('awarded_at');
-            $table->json('award_data')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
-            $table->softDeletes();
+
+            $table->unique(['user_id', 'badge_id']);
         });
     }
 

@@ -17,10 +17,17 @@
                 Une solution en ligne gratuite pour vous aider à échanger vos biens & services en toute confiance et simplicité.
             </p>
             <div class="mt-10 flex justify-center gap-4">
-                <a href="{{ route('register') }}" 
-                   class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-[#35a79b] bg-white hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl">
-                    Commencer maintenant
-                </a>
+                @auth
+                    <a href="{{ route('ads.create.step1') }}" 
+                       class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-[#35a79b] bg-white hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl">
+                        Créer une annonce
+                    </a>
+                @else
+                    <a href="{{ route('register') }}" 
+                       class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-[#35a79b] bg-white hover:bg-gray-50 transition-colors shadow-lg hover:shadow-xl">
+                        Commencer maintenant
+                    </a>
+                @endauth
                 <a href="{{ route('how-it-works') }}" 
                    class="inline-flex items-center px-6 py-3 border-2 border-white text-base font-medium rounded-full text-white hover:bg-white/10 transition-colors">
                     Comment ça marche ?

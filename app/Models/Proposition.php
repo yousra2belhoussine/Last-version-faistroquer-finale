@@ -70,4 +70,12 @@ class Proposition extends Model
     public function isCompleted(){
         return $this->status === 'completed';
     }
+
+    /**
+     * Obtient le feedback associé à la proposition.
+     */
+    public function feedback()
+    {
+        return $this->hasOne(Feedback::class);
+    }
 } 

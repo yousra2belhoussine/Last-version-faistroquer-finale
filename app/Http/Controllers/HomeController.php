@@ -88,44 +88,65 @@ class HomeController extends Controller
             })->where('status', 'cancelled')->count(),
         ];
         
-        // Get recent messages
-        $recentMessages = Message::where(function ($query) use ($user) {
-            $query->where('sender_id', $user->id)
-                  ->orWhere('receiver_id', $user->id);
-        })
-        ->with(['sender', 'receiver', 'proposition.ad'])
-        ->orderBy('created_at', 'desc')
-        ->take(3)
-        ->get()
-        ->map(function ($message) use ($user) {
-            $otherUser = $message->sender_id === $user->id ? $message->receiver : $message->sender;
-            return [
-                'id' => $message->id,
-                'content' => $message->content,
-                'created_at' => $message->created_at,
-                'is_read' => !is_null($message->read_at),
-                'other_user' => [
-                    'id' => $otherUser->id,
-                    'name' => $otherUser->name,
-                ],
-                'type' => $message->proposition_id ? 'proposition' : 'direct',
-                'ad' => $message->proposition ? [
-                    'id' => $message->proposition->ad->id,
-                    'title' => $message->proposition->ad->title,
-                ] : null
-            ];
-        });
+        // Get recent messages for the dashboard
+        $recentMessages = $this->getRecentMessages($user);
 
         // Get unread messages count
-        $unreadCount = Message::where('receiver_id', $user->id)
-            ->whereNull('read_at')
-            ->count();
+        $unreadCount = $this->getUnreadMessagesCount($user);
 
         return view('dashboard', [
             'recentMessages' => $recentMessages,
             'unreadCount' => $unreadCount,
             'propositionStats' => $propositionStats,
         ]);
+    }
+
+    /**
+     * Get recent messages for the dashboard
+     */
+    private function getRecentMessages($user)
+    {
+        return Message::whereHas('conversation.participants', function($query) use ($user) {
+            $query->where('users.id', $user->id);
+        })
+        ->with(['sender', 'conversation.participants'])
+        ->orderBy('created_at', 'desc')
+        ->take(3)
+        ->get()
+        ->map(function ($message) use ($user) {
+            $otherParticipant = $message->conversation->participants
+                ->where('id', '!=', $user->id)
+                ->first();
+
+            return [
+                'id' => $message->id,
+                'content' => $message->content,
+                'created_at' => $message->created_at,
+                'is_read' => $message->is_read,
+                'other_user' => $otherParticipant ? [
+                    'id' => $otherParticipant->id,
+                    'name' => $otherParticipant->name,
+                    'profile_photo_url' => $otherParticipant->profile_photo_url
+                ] : null,
+                'type' => $message->type,
+                'conversation_id' => $message->conversation_id
+            ];
+        });
+    }
+
+    /**
+     * Get unread messages count
+     */
+    private function getUnreadMessagesCount($user)
+    {
+        return Message::whereHas('conversation.participants', function($query) use ($user) {
+            $query->where('users.id', $user->id);
+        })
+        ->where('sender_id', '!=', $user->id)
+        ->whereDoesntHave('reads', function($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+        ->count();
     }
 
     public function howItWorks()
@@ -149,6 +170,62 @@ class HomeController extends Controller
         return view('pages.help', [
             'metaTitle' => 'Aide et Support - FAISTROQUER',
             'metaDescription' => 'Besoin d\'aide ? Consultez notre centre d\'aide pour trouver des réponses à vos questions et obtenir de l\'assistance.',
+        ]);
+    }
+
+    public function about()
+    {
+        return view('pages.about', [
+            'metaTitle' => 'À propos - FAISTROQUER',
+            'metaDescription' => 'Découvrez qui nous sommes et notre mission chez FAISTROQUER. En savoir plus sur notre plateforme d\'échange de biens et services.',
+        ]);
+    }
+
+    public function contact()
+    {
+        return view('pages.contact', [
+            'metaTitle' => 'Contact - FAISTROQUER',
+            'metaDescription' => 'Contactez-nous pour toute question ou suggestion concernant FAISTROQUER. Notre équipe est là pour vous aider.',
+        ]);
+    }
+
+    public function terms()
+    {
+        return view('pages.terms', [
+            'metaTitle' => 'Conditions d\'utilisation - FAISTROQUER',
+            'metaDescription' => 'Consultez nos conditions d\'utilisation pour comprendre vos droits et obligations sur FAISTROQUER.',
+        ]);
+    }
+
+    public function privacy()
+    {
+        return view('pages.privacy', [
+            'metaTitle' => 'Politique de confidentialité - FAISTROQUER',
+            'metaDescription' => 'Découvrez comment nous protégeons vos données personnelles sur FAISTROQUER.',
+        ]);
+    }
+
+    public function legal()
+    {
+        return view('pages.legal', [
+            'metaTitle' => 'Mentions légales - FAISTROQUER',
+            'metaDescription' => 'Consultez nos mentions légales pour plus d\'informations sur FAISTROQUER.',
+        ]);
+    }
+
+    public function cookies()
+    {
+        return view('pages.cookies', [
+            'metaTitle' => 'Gestion des cookies - FAISTROQUER',
+            'metaDescription' => 'Découvrez comment nous utilisons les cookies sur FAISTROQUER et gérez vos préférences.',
+        ]);
+    }
+
+    public function safety()
+    {
+        return view('pages.safety', [
+            'metaTitle' => 'Conseils de sécurité - FAISTROQUER',
+            'metaDescription' => 'Consultez nos conseils de sécurité pour échanger en toute confiance sur FAISTROQUER.',
         ]);
     }
 } 

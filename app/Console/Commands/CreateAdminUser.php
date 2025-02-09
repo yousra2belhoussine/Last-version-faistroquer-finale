@@ -8,21 +8,33 @@ use Illuminate\Support\Facades\Hash;
 
 class CreateAdminUser extends Command
 {
-    protected $signature = 'admin:create';
-    protected $description = 'Créer un utilisateur administrateur';
+    protected $signature = 'admin:create {email} {password}';
+    protected $description = 'Crée un nouvel utilisateur administrateur';
 
     public function handle()
     {
-        $admin = User::create([
-            'name' => 'Admin',
-            'email' => 'admin@faistroquer.fr',
-            'password' => Hash::make('Admin@123456'),
-            'is_admin' => true,
-            'email_verified_at' => now(),
-        ]);
+        $email = $this->argument('email');
+        $password = $this->argument('password');
 
-        $this->info('Administrateur créé avec succès!');
-        $this->info('Email: admin@faistroquer.fr');
-        $this->info('Mot de passe: Admin@123456');
+        // Vérifie si l'utilisateur existe déjà
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            // Met à jour l'utilisateur existant
+            $user->update([
+                'is_admin' => true,
+                'password' => Hash::make($password)
+            ]);
+            $this->info("L'utilisateur {$email} a été mis à jour en tant qu'administrateur.");
+        } else {
+            // Crée un nouvel utilisateur administrateur
+            User::create([
+                'name' => 'Admin',
+                'email' => $email,
+                'password' => Hash::make($password),
+                'is_admin' => true
+            ]);
+            $this->info("Un nouvel administrateur a été créé avec l'email {$email}.");
+        }
     }
 } 

@@ -56,7 +56,7 @@ class UserAndAdSeeder extends Seeder
             Ad::create([
                 'title' => $faker->sentence(6),
                 'description' => $faker->paragraphs(3, true),
-                'type' => $faker->randomElement(['good', 'service']),
+                'type' => $faker->randomElement(['goods', 'services']),
                 'status' => $faker->randomElement(['active', 'pending', 'paused']),
                 'user_id' => $faker->randomElement($userIds),
                 'category_id' => $faker->randomElement($categoryIds),

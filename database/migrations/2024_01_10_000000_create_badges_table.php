@@ -13,11 +13,9 @@ return new class extends Migration
     {
         Schema::create('badges', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('type');
+            $table->string('type')->unique();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->timestamp('awarded_at');
             $table->timestamps();
         });
     }

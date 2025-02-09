@@ -13,45 +13,39 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create admin user
+        // Créer un admin
         User::create([
             'name' => 'Admin',
-            'email' => 'admin@faistroquer.fr',
+            'email' => 'admin@example.com',
             'password' => Hash::make('password'),
+            'is_admin' => true,
             'email_verified_at' => now(),
-            'type' => 'admin',
         ]);
 
-        // Create professional users
-        for ($i = 1; $i <= 5; $i++) {
-            User::create([
-                'name' => "Professional User {$i}",
-                'email' => "pro{$i}@example.com",
+        // Créer quelques utilisateurs de test
+        $users = [
+            [
+                'name' => 'Jean Dupont',
+                'email' => 'jean@example.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
-                'type' => 'professional',
-            ]);
-        }
-
-        // Create regular users
-        for ($i = 1; $i <= 20; $i++) {
-            User::create([
-                'name' => "User {$i}",
-                'email' => "user{$i}@example.com",
+            ],
+            [
+                'name' => 'Marie Martin',
+                'email' => 'marie@example.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
-                'type' => 'particular',
-            ]);
-        }
-
-        // Create some unverified users
-        for ($i = 1; $i <= 3; $i++) {
-            User::create([
-                'name' => "Unverified User {$i}",
-                'email' => "unverified{$i}@example.com",
+            ],
+            [
+                'name' => 'Pierre Bernard',
+                'email' => 'pierre@example.com',
                 'password' => Hash::make('password'),
-                'type' => 'particular',
-            ]);
+                'email_verified_at' => now(),
+            ],
+        ];
+
+        foreach ($users as $userData) {
+            User::create($userData);
         }
     }
 } 

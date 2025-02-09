@@ -119,19 +119,14 @@ class AdController extends Controller
             $validated = $request->validate([
                 'q' => 'nullable|string|min:2|max:100',
                 'category' => 'nullable|exists:categories,id',
-                'region' => 'nullable|exists:regions,id',
-                'department' => 'nullable|exists:departments,id',
-                'type' => 'nullable|in:goods,services',
-                'online_only' => 'nullable|boolean',
-                'with_countdown' => 'nullable|boolean',
-                'sort' => 'nullable|in:created_at,expires_at,title',
-                'order' => 'nullable|in:asc,desc'
+                'type' => 'nullable|in:goods,services'
             ]);
 
             $query = Ad::query()
-                ->with(['user', 'category', 'images']);
+                ->with(['user', 'category', 'images'])
+                ->where('status', 'active');
 
-            // Basic search
+            // Recherche textuelle
             if (!empty($validated['q'])) {
                 $searchTerm = $validated['q'];
                 $query->where(function($q) use ($searchTerm) {
@@ -143,76 +138,40 @@ class AdController extends Controller
                 });
             }
 
-            // Location filters
-            if (!empty($validated['region'])) {
-                $query->where('region_id', $validated['region']);
-            }
-
-            if (!empty($validated['department'])) {
-                $query->where('department_id', $validated['department']);
-            }
-
-            // Category filter
+            // Filtre par catégorie
             if (!empty($validated['category'])) {
                 $query->where('category_id', $validated['category']);
             }
 
-            // Type filter
+            // Filtre par type
             if (!empty($validated['type'])) {
                 $query->where('type', $validated['type']);
             }
 
-            // Online only filter
-            if (!empty($validated['online_only'])) {
-                $query->where('online_only', true);
-            }
+            // Tri par date de création
+            $query->latest();
 
-            // Countdown filter
-            if (!empty($validated['with_countdown'])) {
-                $query->whereNotNull('expires_at')
-                      ->where('expires_at', '>', now());
-            }
-
-            // Sorting
-            $sortField = $validated['sort'] ?? 'created_at';
-            $sortOrder = $validated['order'] ?? 'desc';
-            $query->orderBy($sortField, $sortOrder);
-
-            // Get selected filters for the view
-            $selectedRegion = !empty($validated['region']) ? Region::find($validated['region']) : null;
-            $selectedDepartment = !empty($validated['department']) ? Department::find($validated['department']) : null;
-            $selectedCategory = !empty($validated['category']) ? Category::find($validated['category']) : null;
-
-            // Get all regions and categories for filters
-            $regions = Region::orderBy('name')->get();
+            // Récupération des données pour les filtres
             $categories = Category::orderBy('name')->get();
 
-            // Paginate results
+            // Pagination avec conservation des paramètres de recherche
             $ads = $query->paginate(15)->withQueryString();
 
-            \Log::info('Search query executed', [
-                'search_term' => $validated['q'] ?? null,
-                'results_count' => $ads->total(),
-                'filters' => $validated
+            return view('ads.index', [
+                'ads' => $ads,
+                'categories' => $categories,
+                'searchQuery' => $validated['q'] ?? ''
             ]);
 
-            return view('ads.search', [
-                'ads' => $ads,
-                'regions' => $regions,
-                'categories' => $categories,
-                'selectedRegion' => $selectedRegion,
-                'selectedDepartment' => $selectedDepartment,
-                'selectedCategory' => $selectedCategory,
-                'searchQuery' => $validated['q'] ?? '',
-                'filters' => $validated
-            ]);
         } catch (\Exception $e) {
-            \Log::error('Error in search:', [
+            \Log::error('Erreur lors de la recherche:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return back()->with('error', 'Une erreur est survenue lors de la recherche.');
+            return back()
+                ->withInput()
+                ->with('error', 'Une erreur est survenue lors de la recherche.');
         }
     }
 
@@ -240,7 +199,8 @@ class AdController extends Controller
                 'postal_code' => 'required',
                 'exchange_with' => 'required',
                 'condition' => 'required',
-                'region_id' => 'required'  
+                'region_id' => 'required',
+                'expires_at' => 'nullable|date|after:now'  
             ]);
 
             // Préparation des données
@@ -260,6 +220,7 @@ class AdController extends Controller
                 'status' => 'pending',
                 'is_online' => true,
                 'online_exchange' => $request->has('online_exchange'),
+                'expires_at' => $request->expires_at ? now()->addDays(30) : null
             ];
 
             // Pour le débogage, affichons les données avant l'insertion
@@ -364,8 +325,13 @@ class AdController extends Controller
             'exchange_with' => 'nullable|string',
             'online_exchange' => 'nullable|boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-
+            'expires_at' => 'nullable|date|after:now'
         ]);
+
+        // Si expires_at est fourni, on le met à jour
+        if ($request->has('expires_at')) {
+            $validated['expires_at'] = now()->addDays(30);
+        }
 
         $ad->update($validated);
 
@@ -625,6 +591,149 @@ class AdController extends Controller
         } catch (\Exception $e) {
             Log::error('Error updating rating', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    // Méthodes pour la création d'annonce en plusieurs étapes
+    public function createStep1()
+    {
+        return view('ads.create.step1', [
+            'categories' => Category::all()
+        ]);
+    }
+
+    public function storeStep1(Request $request)
+    {
+        $validatedData = $request->validate([
+            'type' => 'required|in:goods,services',
+            'category_id' => 'required|exists:categories,id',
+        ]);
+
+        $request->session()->put('ad_data', $validatedData);
+        return redirect()->route('ads.create.step2');
+    }
+
+    public function createStep2()
+    {
+        return view('ads.create.step2');
+    }
+
+    public function storeStep2(Request $request)
+    {
+        $validatedData = $request->validate([
+            'title' => 'required|min:5|max:255',
+            'description' => 'required|min:20',
+            'exchange_with' => 'required|min:5',
+        ]);
+
+        // Log des données avant la fusion
+        \Log::info('Step 2 - Current session data:', $request->session()->get('ad_data', []));
+        \Log::info('Step 2 - New validated data:', $validatedData);
+
+        // Fusionner avec les données existantes
+        $sessionData = array_merge(
+            $request->session()->get('ad_data', []),
+            $validatedData
+        );
+
+        // Sauvegarder dans la session
+        $request->session()->put('ad_data', $sessionData);
+
+        // Log des données après la fusion
+        \Log::info('Step 2 - Final session data:', $sessionData);
+
+        return redirect()->route('ads.create.step3');
+    }
+
+    public function createStep3()
+    {
+        return view('ads.create.step3');
+    }
+
+    public function storeStep3(Request $request)
+    {
+        $validatedData = $request->validate([
+            'price' => 'required|numeric|min:0',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        if ($request->hasFile('images')) {
+            $images = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('ads', 'public');
+                $images[] = $path;
+            }
+            $validatedData['images'] = $images;
+        }
+
+        $request->session()->put('ad_data', array_merge(
+            $request->session()->get('ad_data', []),
+            $validatedData
+        ));
+
+        return redirect()->route('ads.create.step4');
+    }
+
+    public function createStep4()
+    {
+        return view('ads.create.step4', [
+            'regions' => Region::all()
+        ]);
+    }
+
+    public function storeStep4(Request $request)
+    {
+        $validatedData = $request->validate([
+            'region_id' => 'required|exists:regions,id',
+            'department' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'postal_code' => 'required|string|max:5',
+        ]);
+
+        // Récupérer toutes les données de la session
+        $sessionData = $request->session()->get('ad_data', []);
+        
+        // Log pour déboguer
+        \Log::info('Session data:', $sessionData);
+        \Log::info('Validated data:', $validatedData);
+
+        // Fusionner les données
+        $adData = array_merge($sessionData, $validatedData);
+
+        // Vérifier que les champs requis sont présents
+        if (!isset($adData['title']) || !isset($adData['description']) || !isset($adData['type']) || !isset($adData['category_id'])) {
+            return redirect()->route('ads.create.step1')
+                ->with('error', 'Certaines informations sont manquantes. Veuillez recommencer le processus.');
+        }
+
+        // Log des données finales
+        \Log::info('Final ad data:', $adData);
+
+        try {
+            // Créer l'annonce
+            $ad = Auth::user()->ads()->create($adData);
+
+            // Gérer les images si présentes
+            if (isset($adData['images'])) {
+                foreach ($adData['images'] as $image) {
+                    $ad->images()->create(['image_path' => $image]);
+                }
+            }
+
+            // Nettoyer la session
+            $request->session()->forget('ad_data');
+
+            return redirect()->route('ads.show', $ad)
+                ->with('success', 'Votre annonce a été créée avec succès !');
+
+        } catch (\Exception $e) {
+            \Log::error('Error creating ad:', [
+                'error' => $e->getMessage(),
+                'data' => $adData
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Une erreur est survenue lors de la création de l\'annonce. Veuillez réessayer.');
         }
     }
 }

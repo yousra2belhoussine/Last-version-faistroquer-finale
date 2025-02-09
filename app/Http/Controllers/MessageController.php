@@ -2,221 +2,268 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Message;
 use App\Models\User;
+use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
-    /**
-     * Display a listing of the messages.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        $messages = Message::latest()->paginate(10);
-        $recentUsers = User::whereHas('sentMessages')
-            ->orWhereHas('receivedMessages')
-            ->latest()
-            ->take(10)
+        // Récupérer l'utilisateur connecté
+        $user = auth()->user();
+        \Log::info('User ID: ' . $user->id);
+
+        // Récupérer les conversations avec leurs derniers messages
+        $conversations = $user->conversations()
+            ->with(['participants', 'messages' => function($query) {
+                $query->latest();
+            }, 'messages.sender'])
+            ->withCount(['messages as unread_count' => function ($query) {
+                $query->where('sender_id', '!=', auth()->id())
+                    ->where('created_at', '>', function($subquery) {
+                        $subquery->select('last_read_at')
+                            ->from('conversation_participants')
+                            ->whereColumn('conversation_id', 'messages.conversation_id')
+                            ->where('user_id', auth()->id())
+                            ->limit(1);
+                    });
+            }])
+            ->orderByDesc(function ($query) {
+                $query->select('created_at')
+                    ->from('messages')
+                    ->whereColumn('conversation_id', 'conversations.id')
+                    ->latest()
+                    ->limit(1);
+            })
             ->get();
-            
-        $conversations = Conversation::whereHas('participants', function($query) {
-            $query->where('users.id', auth()->id());
-        })
-        ->with(['lastMessage', 'participants' => function($query) {
-            $query->where('users.id', '!=', auth()->id());
-        }])
-        ->latest()
-        ->get()
-        ->map(function($conversation) {
-            $conversation->other_user = $conversation->participants->first();
-            return $conversation;
-        });
-            
-        return view('messages.index', compact('messages', 'recentUsers', 'conversations'));
-    }
 
-    /**
-     * Store a new message.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'content' => 'required|string|max:1000',
-            'receiver_id' => 'required|exists:users,id',
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            // Get or create conversation
-            $conversation = $this->getOrCreateConversation($validated['receiver_id']);
-
-            // Create message
-            $message = Message::create([
-                'content' => $validated['content'],
-                'sender_id' => auth()->id(),
-                'receiver_id' => $validated['receiver_id'],
-                'conversation_id' => $conversation->id,
-            ]);
-
-            DB::commit();
-
-            return redirect()->route('messages.index')->with('success', 'Message sent successfully.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Failed to send message. Please try again.');
-        }
-    }
-
-    /**
-     * Get existing conversation or create new one
-     *
-     * @param int $receiver_id
-     * @return \App\Models\Conversation
-     */
-    private function getOrCreateConversation($receiver_id)
-    {
-        // Try to find existing private conversation
-        $conversation = Conversation::whereHas('participants', function($query) use ($receiver_id) {
-            $query->where('users.id', auth()->id());
-        })->whereHas('participants', function($query) use ($receiver_id) {
-            $query->where('users.id', $receiver_id);
-        })->where('type', 'private')
-        ->first();
-
-        // If no conversation exists, create new one
-        if (!$conversation) {
-            $conversation = Conversation::create([
-                'type' => 'private'
-            ]);
-
-            // Attach participants
-            $conversation->participants()->attach([
-                auth()->id(),
-                $receiver_id
-            ]);
+        // Déboguer les conversations
+        \Log::info('Nombre de conversations: ' . $conversations->count());
+        foreach ($conversations as $conversation) {
+            \Log::info('Conversation ID: ' . $conversation->id);
+            \Log::info('Nombre de messages: ' . $conversation->messages->count());
+            \Log::info('Participants: ' . $conversation->participants->pluck('id'));
         }
 
-        return $conversation;
+        return view('messages.index', compact('conversations'));
     }
 
-    /**
-     * Display the specified conversation.
-     *
-     * @param  \App\Models\Conversation  $conversation
-     * @return \Illuminate\Http\Response
-     */
     public function show(Conversation $conversation)
     {
-        // Verify if the authenticated user is a participant using the pivot table directly
-        $isParticipant = DB::table('conversation_user')
-            ->where('conversation_id', $conversation->id)
-            ->where('user_id', auth()->id())
-            ->exists();
-
-        if (!$isParticipant) {
-            abort(403, 'You are not authorized to view this conversation.');
+        // Débogage détaillé
+        \Log::info('=== Début de la méthode show ===');
+        \Log::info('Conversation ID: ' . $conversation->id);
+        \Log::info('User ID: ' . auth()->id());
+        
+        // Vérifier si la conversation existe et a des participants
+        if (!$conversation || !$conversation->participants) {
+            \Log::error('Conversation invalide ou sans participants');
+            abort(404, 'Conversation non trouvée');
         }
+        
+        \Log::info('Participants: ' . $conversation->participants->pluck('id'));
 
-        $messages = $conversation->messages()
-            ->with(['sender', 'receiver'])
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        $other_user = $conversation->participants()
-            ->where('users.id', '!=', auth()->id())
-            ->first();
-
-        if (!$other_user) {
-            abort(404, 'Conversation participant not found.');
+        // Vérifier si l'utilisateur est participant
+        if (!$conversation->participants->contains(auth()->id())) {
+            \Log::error('Utilisateur non autorisé à accéder à cette conversation');
+            abort(403, 'Vous n\'êtes pas autorisé à accéder à cette conversation');
         }
-
-        return view('messages.show', compact('messages', 'other_user', 'conversation'));
-    }
-
-    /**
-     * Display direct messages between two users.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
-    public function showDirect(User $user)
-    {
-        $messages = Message::where(function($query) use ($user) {
-            $query->where(function($q) use ($user) {
-                $q->where('sender_id', auth()->id())
-                  ->where('receiver_id', $user->id);
-            })->orWhere(function($q) use ($user) {
-                $q->where('sender_id', $user->id)
-                  ->where('receiver_id', auth()->id());
-            });
-        })
-        ->with(['sender', 'receiver'])
-        ->latest()
-        ->get();
-
-        $other_user = [
-            'id' => $user->id,
-            'name' => $user->name
-        ];
-
-        return view('messages.show', compact('messages', 'other_user'));
-    }
-
-    /**
-     * Remove the specified message.
-     *
-     * @param  \App\Models\Message  $message
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Message $message)
-    {
-        $this->authorize('delete', $message);
-        $message->delete();
-        return redirect()->route('messages.index')->with('success', 'Message deleted successfully.');
-    }
-
-    /**
-     * Store a direct message.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function storeDirect(Request $request)
-    {
-        $validated = $request->validate([
-            'content' => 'required|string|max:1000',
-            'recipient_id' => 'required|exists:users,id',
-        ]);
 
         try {
-            DB::beginTransaction();
+            // Récupérer toutes les conversations pour la sidebar
+            $conversations = auth()->user()->conversations()
+                ->with(['participants', 'lastMessage'])
+                ->withCount(['messages as unread_count' => function ($query) {
+                    $query->where('sender_id', '!=', auth()->id())
+                        ->whereDoesntHave('reads', function($q) {
+                            $q->where('user_id', auth()->id());
+                        });
+                }])
+                ->orderByDesc(function ($query) {
+                    $query->select('created_at')
+                        ->from('messages')
+                        ->whereColumn('conversation_id', 'conversations.id')
+                        ->latest()
+                        ->limit(1);
+                })
+                ->get();
 
-            // Get or create conversation
-            $conversation = $this->getOrCreateConversation($validated['recipient_id']);
+            \Log::info('Nombre de conversations dans la sidebar: ' . $conversations->count());
 
-            // Create message
-            $message = Message::create([
-                'content' => $validated['content'],
+            // Récupérer les messages de la conversation actuelle
+            $messages = $conversation->messages()
+                ->with('sender')
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            \Log::info('Nombre de messages dans la conversation: ' . $messages->count());
+            
+            // Marquer la conversation comme lue
+            $conversation->markAsRead(auth()->id());
+            
+            \Log::info('=== Fin de la méthode show ===');
+
+            return view('messages.show', compact('conversation', 'messages', 'conversations'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors du chargement de la conversation: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            abort(500, 'Une erreur est survenue lors du chargement de la conversation');
+        }
+    }
+
+    public function store(Request $request, Conversation $conversation)
+    {
+        // Vérifier si l'utilisateur est participant
+        abort_if(!$conversation->participants->contains(auth()->id()), 403);
+
+        $validated = $request->validate([
+            'content' => 'required|string|max:1000',
+        ]);
+
+        $message = $conversation->messages()->create([
+            'sender_id' => auth()->id(),
+            'content' => $validated['content'],
+        ]);
+
+        return back()->with('success', 'Message envoyé');
+    }
+
+    public function create()
+    {
+        $users = User::where('id', '!=', auth()->id())->get();
+        return view('messages.create', compact('users'));
+    }
+
+    public function startConversation(Request $request)
+    {
+        $validated = $request->validate([
+            'recipient_id' => 'required|exists:users,id',
+            'content' => 'required|string|max:1000',
+        ]);
+
+        // Trouver ou créer une conversation privée entre les deux utilisateurs
+        $conversation = Conversation::whereHas('participants', function ($query) {
+            $query->where('user_id', auth()->id());
+        })->whereHas('participants', function ($query) use ($validated) {
+            $query->where('user_id', $validated['recipient_id']);
+        })->where('type', 'private')->first();
+
+        if (!$conversation) {
+            $conversation = Conversation::create(['type' => 'private']);
+            $conversation->participants()->attach([
+                auth()->id(),
+                $validated['recipient_id']
+            ]);
+        }
+
+        // Créer le message
+        $conversation->messages()->create([
+            'sender_id' => auth()->id(),
+            'content' => $validated['content'],
+        ]);
+
+        return redirect()->route('messages.show', $conversation)
+            ->with('success', 'Message envoyé');
+    }
+
+    public function showDirectConversation(User $user)
+    {
+        // Vérifier qu'on ne tente pas de démarrer une conversation avec soi-même
+        if ($user->id === auth()->id()) {
+            return redirect()->route('messages.index')
+                ->with('error', 'Vous ne pouvez pas démarrer une conversation avec vous-même.');
+        }
+
+        // Trouver ou créer une conversation privée entre les deux utilisateurs
+        $conversation = Conversation::whereHas('participants', function ($query) {
+            $query->where('user_id', auth()->id());
+        })->whereHas('participants', function ($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })->where('type', 'private')->first();
+
+        if (!$conversation) {
+            $conversation = Conversation::create(['type' => 'private']);
+            $conversation->participants()->attach([
+                auth()->id(),
+                $user->id
+            ]);
+        }
+
+        return redirect()->route('messages.show', $conversation);
+    }
+
+    public function contactSeller(Request $request, User $seller)
+    {
+        // Vérifier que l'utilisateur est connecté
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('error', 'Vous devez être connecté pour envoyer un message.');
+        }
+
+        // Valider les données du formulaire
+        $validated = $request->validate([
+            'message' => 'required|string|min:2|max:1000',
+        ], [
+            'message.required' => 'Le message est obligatoire.',
+            'message.min' => 'Le message doit contenir au moins 2 caractères.',
+            'message.max' => 'Le message ne peut pas dépasser 1000 caractères.'
+        ]);
+
+        // Vérifier qu'on ne tente pas de s'envoyer un message à soi-même
+        if ($seller->id === auth()->id()) {
+            return back()
+                ->withInput()
+                ->with('error', 'Vous ne pouvez pas vous envoyer un message à vous-même.');
+        }
+
+        try {
+            // Trouver ou créer une conversation privée
+            $conversation = Conversation::whereHas('participants', function ($query) {
+                $query->where('user_id', auth()->id());
+            })->whereHas('participants', function ($query) use ($seller) {
+                $query->where('user_id', $seller->id);
+            })->where('type', 'private')->first();
+
+            if (!$conversation) {
+                $conversation = Conversation::create(['type' => 'private']);
+                $conversation->participants()->attach([
+                    auth()->id(),
+                    $seller->id
+                ]);
+            }
+
+            // Créer le message
+            $conversation->messages()->create([
                 'sender_id' => auth()->id(),
-                'receiver_id' => $validated['recipient_id'],
-                'conversation_id' => $conversation->id,
+                'content' => $validated['message']
             ]);
 
-            DB::commit();
+            return redirect()->route('messages.show', $conversation)
+                ->with('success', 'Message envoyé avec succès !');
 
-            return back()->with('success', 'Message sent successfully.');
         } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Failed to send message. Please try again.');
+            return back()
+                ->withInput()
+                ->with('error', 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer.');
         }
+    }
+
+    public function activeUsers()
+    {
+        // Récupérer tous les utilisateurs qui ont envoyé des messages
+        $activeUsers = \App\Models\User::whereHas('messages')
+            ->withCount(['messages' => function($query) {
+                $query->orderBy('created_at', 'desc');
+            }])
+            ->with(['messages' => function($query) {
+                $query->latest()->limit(1);
+            }])
+            ->orderBy('messages_count', 'desc')
+            ->get();
+
+        return view('messages.active_users', compact('activeUsers'));
     }
 } 

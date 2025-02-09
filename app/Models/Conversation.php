@@ -10,59 +10,44 @@ class Conversation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'type',
+        'type'
     ];
 
-    /**
-     * Get all participants in the conversation.
-     */
+    protected $with = ['participants'];
+
     public function participants()
     {
-        return $this->belongsToMany(User::class, 'conversation_user')
+        return $this->belongsToMany(User::class, 'conversation_participants')
+                    ->withPivot('last_read_at')
                     ->withTimestamps();
     }
 
-    /**
-     * Get the last message of the conversation.
-     */
+    public function messages()
+    {
+        return $this->hasMany(Message::class)->latest();
+    }
+
     public function lastMessage()
     {
         return $this->hasOne(Message::class)->latest();
     }
 
-    /**
-     * Get all messages in the conversation.
-     */
-    public function messages()
+    public function unreadMessagesCount($userId)
     {
-        return $this->hasMany(Message::class);
+        $lastRead = $this->participants()->where('user_id', $userId)->first()?->pivot->last_read_at;
+        
+        return $this->messages()
+                    ->where('sender_id', '!=', $userId)
+                    ->when($lastRead, function ($query) use ($lastRead) {
+                        return $query->where('created_at', '>', $lastRead);
+                    })
+                    ->count();
     }
 
-    /**
-     * Get the other participant in a private conversation.
-     */
-    public function otherUser()
+    public function markAsRead($userId)
     {
-        return $this->belongsToMany(User::class, 'conversation_user')
-                    ->where('users.id', '!=', auth()->id())
-                    ->take(1);
+        return $this->participants()
+                    ->where('user_id', $userId)
+                    ->update(['last_read_at' => now()]);
     }
-
-    /**
-     * Get the other user attribute.
-     */
-    public function getOtherUserAttribute()
-    {
-        return $this->otherUser()->first();
-    }
-
-    /**
-     * Scope a query to include the other user in the conversation.
-     */
-    public function scopeWithOtherUser($query)
-    {
-        return $query->with(['participants' => function($q) {
-            $q->where('users.id', '!=', auth()->id());
-        }]);
-    }
-}
+} 

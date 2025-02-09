@@ -27,7 +27,8 @@ class Ad extends Model
         'is_online',
         'is_featured',
         'views_count',
-        'region_id'
+        'region_id',
+        'expires_at'
     ];
 
     protected $casts = [
@@ -38,6 +39,8 @@ class Ad extends Model
         'online_exchange' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'deleted_at' => 'datetime'
     ];
 
     public function user()
@@ -75,5 +78,10 @@ class Ad extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class, 'reviewed_id');
+    }
+
+    public function region()
+    {
+        return $this->belongsTo(Region::class);
     }
 }

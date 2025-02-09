@@ -22,7 +22,7 @@ class NewMessageEvent implements ShouldBroadcast
      */
     public function __construct(Message $message)
     {
-        $this->message = $message;
+        $this->message = $message->load(['sender', 'conversation.participants']);
     }
 
     /**
@@ -32,9 +32,9 @@ class NewMessageEvent implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
+        // Diffuser sur le canal de la conversation
         return [
-            new PrivateChannel('chat.' . $this->message->sender_id . '.' . $this->message->receiver_id),
-            new PrivateChannel('chat.' . $this->message->receiver_id . '.' . $this->message->sender_id),
+            new PrivateChannel('conversation.' . $this->message->conversation_id),
         ];
     }
 
@@ -47,13 +47,25 @@ class NewMessageEvent implements ShouldBroadcast
     {
         return [
             'id' => $this->message->id,
+            'conversation_id' => $this->message->conversation_id,
             'content' => $this->message->content,
-            'sender_id' => $this->message->sender_id,
-            'receiver_id' => $this->message->receiver_id,
+            'type' => $this->message->type,
+            'file_url' => $this->message->file_url,
+            'is_system_message' => $this->message->is_system_message,
             'created_at' => $this->message->created_at,
-            'sender' => [
+            'sender' => $this->message->sender ? [
                 'id' => $this->message->sender->id,
                 'name' => $this->message->sender->name,
+                'profile_photo_url' => $this->message->sender->profile_photo_url,
+            ] : null,
+            'conversation' => [
+                'participants' => $this->message->conversation->participants->map(function ($participant) {
+                    return [
+                        'id' => $participant->id,
+                        'name' => $participant->name,
+                        'profile_photo_url' => $participant->profile_photo_url,
+                    ];
+                })
             ]
         ];
     }

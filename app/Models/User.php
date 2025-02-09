@@ -9,8 +9,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Review;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
@@ -25,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'bio',
         'notification_preferences',
+        'profile_photo_path',
     ];
 
     protected $hidden = [
@@ -114,47 +118,79 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the unread messages for the user.
+     * Get all conversations the user is part of.
      */
-    public function unreadMessages()
+    public function conversations(): BelongsToMany
     {
-        return $this->hasMany(Message::class, 'receiver_id')
-            ->whereNull('read_at');
+        return $this->belongsToMany(Conversation::class, 'conversation_participants')
+                    ->withPivot('role', 'last_read_at', 'is_muted')
+                    ->withTimestamps();
     }
 
     /**
-     * Get all received messages for the user.
+     * Get all messages sent by the user.
      */
-    public function receivedMessages()
-    {
-        return $this->hasMany(Message::class, 'receiver_id');
-    }
-
-    /**
-     * Get sent messages by the user.
-     */
-    public function sentMessages()
+    public function sentMessages(): HasMany
     {
         return $this->hasMany(Message::class, 'sender_id');
     }
 
     /**
-     * Get all conversations the user is part of.
+     * Get all messages received by the user.
      */
-    public function conversations()
+    public function receivedMessages(): HasMany
     {
-        return $this->belongsToMany(Conversation::class, 'conversation_user')
-                    ->withTimestamps();
+        return $this->hasMany(Message::class, 'recipient_id');
     }
 
     /**
-     * Get all messages (sent and received).
+     * Get all unread messages in user's conversations.
+     */
+    public function unreadMessages()
+    {
+        return Message::whereHas('conversation.participants', function($query) {
+            $query->where('users.id', $this->id);
+        })
+        ->where('sender_id', '!=', $this->id)
+        ->whereDoesntHave('reads', function($query) {
+            $query->where('user_id', $this->id);
+        });
+    }
+
+    /**
+     * Get all messages sent or received by the user.
      */
     public function messages()
     {
-        return Message::where(function($query) {
-            $query->where('sender_id', $this->id)
-                  ->orWhere('receiver_id', $this->id);
+        return Message::whereHas('conversation.participants', function($query) {
+            $query->where('users.id', $this->id);
         });
+    }
+
+    /**
+     * Get all message reads by the user.
+     */
+    public function messageReads()
+    {
+        return $this->hasMany(MessageRead::class);
+    }
+
+    /**
+     * Get all message reactions by the user.
+     */
+    public function messageReactions()
+    {
+        return $this->hasMany(MessageReaction::class);
+    }
+
+    /**
+     * Get the URL of the user's profile photo.
+     */
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo_path && Storage::disk('public')->exists($this->profile_photo_path)) {
+            return url('storage/' . $this->profile_photo_path);
+        }
+        return null;
     }
 }

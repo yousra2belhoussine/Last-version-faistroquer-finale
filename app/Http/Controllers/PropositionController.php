@@ -7,6 +7,8 @@ use App\Models\Proposition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
+use App\Models\Feedback;
 
 class PropositionController extends Controller
 {
@@ -59,14 +61,35 @@ class PropositionController extends Controller
             ->with('success', __('Proposition rejected successfully.'));
     }
 
-    public function complete(Proposition $proposition)
+    public function complete(Request $request, Proposition $proposition)
     {
-        $this->authorize('update', $proposition->ad);
+        // Vérifier que l'utilisateur est autorisé à marquer la proposition comme complétée
+        if (!$proposition->isAccepted() || $proposition->isCompleted() || 
+            (Auth::id() !== $proposition->user_id && Auth::id() !== $proposition->ad->user_id)) {
+            return back()->with('error', __('Vous n\'êtes pas autorisé à effectuer cette action.'));
+        }
 
-        $proposition->update(['status' => 'completed']);
+        // Valider les données du feedback
+        $validated = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'required|string|max:1000',
+        ]);
 
-        return redirect()->back()
-            ->with('success', __('Exchange marked as completed successfully.'));
+        // Créer le feedback
+        $feedback = new Feedback([
+            'user_id' => Auth::id(),
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'],
+        ]);
+
+        // Sauvegarder le feedback et marquer la proposition comme complétée
+        DB::transaction(function () use ($proposition, $feedback) {
+            $proposition->feedback()->save($feedback);
+            $proposition->update(['status' => 'completed', 'completed_at' => now()]);
+        });
+
+        return redirect()->route('propositions.show', $proposition)
+            ->with('success', __('La proposition a été marquée comme complétée et votre feedback a été enregistré.'));
     }
 
     public function cancel(Proposition $proposition)
@@ -130,5 +153,31 @@ class PropositionController extends Controller
         $proposition->load(['ad', 'user', 'messages.user']);
 
         return view('propositions.show', compact('proposition'));
+    }
+
+    /**
+     * Enregistre le feedback pour une proposition
+     */
+    public function feedback(Request $request, Proposition $proposition)
+    {
+        // Vérifier que l'utilisateur est autorisé à donner un feedback
+        if (!$proposition->isCompleted() || Auth::id() !== $proposition->ad->user_id) {
+            return back()->with('error', 'Vous n\'êtes pas autorisé à donner un feedback pour cette proposition.');
+        }
+
+        // Valider les données
+        $validated = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        // Créer le feedback
+        $feedback = $proposition->feedback()->create([
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'],
+            'user_id' => Auth::id(),
+        ]);
+
+        return back()->with('success', 'Votre feedback a été enregistré avec succès.');
     }
 } 

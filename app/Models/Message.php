@@ -4,54 +4,65 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Message extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
-        'content',
-        'sender_id',
-        'receiver_id',
-        'proposition_id',
         'conversation_id',
-        'read_at'
+        'sender_id',
+        'content'
     ];
 
-    protected $casts = [
-        'read_at' => 'datetime'
-    ];
-
-    public function sender()
-    {
-        return $this->belongsTo(User::class, 'sender_id');
-    }
-
-    public function receiver()
-    {
-        return $this->belongsTo(User::class, 'receiver_id');
-    }
-
-    public function proposition()
-    {
-        return $this->belongsTo(Proposition::class);
-    }
+    protected $with = ['sender'];
 
     public function conversation()
     {
         return $this->belongsTo(Conversation::class);
     }
 
-    public function markAsRead()
+    public function sender()
     {
-        if (!$this->read_at) {
-            $this->update(['read_at' => now()]);
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function reads()
+    {
+        return $this->hasMany(MessageRead::class);
+    }
+
+    public function isUnread()
+    {
+        return !$this->reads()
+            ->where('user_id', auth()->id())
+            ->exists();
+    }
+
+    public function markAsRead($userId = null)
+    {
+        $userId = $userId ?? auth()->id();
+        
+        if (!$this->reads()->where('user_id', $userId)->exists()) {
+            return $this->reads()->create([
+                'user_id' => $userId,
+                'read_at' => now()
+            ]);
         }
     }
 
-    public function isRead()
+    public function scopeUnread(Builder $query)
     {
-        return $this->read_at !== null;
+        return $query->whereDoesntHave('reads', function($query) {
+            $query->where('user_id', auth()->id());
+        });
     }
-}
+
+    public function scopeForUser(Builder $query, $userId)
+    {
+        return $query->whereHas('conversation.participants', function($query) use ($userId) {
+            $query->where('users.id', $userId);
+        });
+    }
+} 

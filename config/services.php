@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'insee' => [
+        'key' => env('INSEE_API_KEY'),
+        'secret' => env('INSEE_API_SECRET'),
+    ],
+
 ];
