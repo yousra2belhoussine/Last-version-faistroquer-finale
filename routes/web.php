@@ -27,6 +27,7 @@ require __DIR__.'/web/pages.php';
 require __DIR__.'/web/profile.php';
 require __DIR__.'/web/ads.php';
 require __DIR__.'/web/messaging.php';
+require __DIR__.'/web/admin.php';
 
 // Propositions routes
 Route::middleware('auth')->group(function () {
