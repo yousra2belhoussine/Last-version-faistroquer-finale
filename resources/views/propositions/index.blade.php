@@ -142,23 +142,21 @@
                                     @if($proposition->isPending() && Auth::id() === $proposition->ad->user_id)
                                         <form action="{{ route('propositions.accept', $proposition) }}" method="POST" class="inline">
                                             @csrf
-                                            @method('PATCH')
-                                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-[#35a79b] text-white rounded-md hover:bg-[#2c8c82] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#35a79b]">
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                            {{ __('Accepter') }}
+                                            <button type="submit" class="inline-flex items-center px-6 py-2 bg-[#35a79b] text-white rounded-md hover:bg-[#2c8c82] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#35a79b]">
+                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                                {{ __('Accepter') }}
                                             </button>
                                         </form>
 
                                         <form action="{{ route('propositions.reject', $proposition) }}" method="POST" class="inline">
                                             @csrf
-                                            @method('PATCH')
-                                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                            </svg>
-                                            {{ __('Refuser') }}
+                                            <button type="submit" class="inline-flex items-center px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                                {{ __('Refuser') }}
                                             </button>
                                         </form>
                                     @endif

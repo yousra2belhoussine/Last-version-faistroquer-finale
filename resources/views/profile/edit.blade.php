@@ -3,103 +3,184 @@
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-        <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-            <div class="max-w-xl">
-                <section>
-                    <header>
-                        <h2 class="text-lg font-medium text-gray-900">
-                            {{ __('Informations du profil') }}
-                        </h2>
+        <div class="p-4 sm:p-8 bg-white shadow-lg sm:rounded-xl">
+            <div class="max-w-xl mx-auto">
+                <header class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        {{ __('Informations du profil') }}
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {{ __('Mettez à jour les informations de votre profil et votre adresse email.') }}
+                    </p>
+                </header>
 
-                        <p class="mt-1 text-sm text-gray-600">
-                            {{ __("Mettez à jour les informations de votre profil et votre adresse email.") }}
-                        </p>
-                    </header>
-
-                    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+                <!-- Photo de profil -->
+                <div class="mb-6">
+                    <form id="profile-photo-form" action="{{ route('profile.update-photo') }}" method="POST" enctype="multipart/form-data" class="flex items-center space-x-6">
                         @csrf
                         @method('patch')
-
-                        <div>
-                            <x-input-label for="name" :value="__('Nom')" />
-                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-                            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+                        
+                        <div class="shrink-0">
+                            <div class="relative h-24 w-24">
+                                @if(auth()->user()->profile_photo_path)
+                                    <img id="preview-photo" 
+                                         src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
+                                         alt="{{ auth()->user()->name }}"
+                                         class="h-24 w-24 object-cover rounded-full border-4 border-white shadow-lg"
+                                         onerror="this.onerror=null; this.src='{{ asset('images/default-avatar.png') }}';">
+                                @else
+                                    <div class="h-24 w-24 rounded-full bg-emerald-500 flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-lg">
+                                        {{ substr(auth()->user()->name, 0, 1) }}
+                                    </div>
+                                @endif
+                            </div>
                         </div>
-
-                        <div>
-                            <x-input-label for="email" :value="__('Email')" />
-                            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-                            <x-input-error class="mt-2" :messages="$errors->get('email')" />
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <x-primary-button>{{ __('Enregistrer') }}</x-primary-button>
-
-                            @if (session('status') === 'profile-updated')
-                                <p
-                                    x-data="{ show: true }"
-                                    x-show="show"
-                                    x-transition
-                                    x-init="setTimeout(() => show = false, 2000)"
-                                    class="text-sm text-gray-600"
-                                >{{ __('Enregistré.') }}</p>
+                        
+                        <div class="flex-1">
+                            <label class="block">
+                                <span class="sr-only">Choisir une photo</span>
+                                <input type="file" id="photo" name="photo" accept="image/*"
+                                       class="block w-full text-sm text-gray-500
+                                              file:mr-4 file:py-2 file:px-4
+                                              file:rounded-full file:border-0
+                                              file:text-sm file:font-semibold
+                                              file:bg-[#157e74] file:text-white
+                                              hover:file:bg-[#279078]
+                                              file:cursor-pointer">
+                            </label>
+                            <p class="mt-2 text-xs text-gray-500">
+                                PNG, JPG, GIF jusqu'à 2MB
+                            </p>
+                            @error('photo')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            @if(session('status') === 'photo-updated')
+                                <p class="mt-2 text-sm text-emerald-600">Photo mise à jour avec succès!</p>
+                            @endif
+                            @if(session('error'))
+                                <p class="mt-2 text-sm text-red-600">{{ session('error') }}</p>
                             @endif
                         </div>
                     </form>
-                </section>
+                </div>
+
+                <!-- Informations du profil -->
+                <form method="post" action="{{ route('profile.update') }}" class="space-y-6">
+                    @csrf
+                    @method('patch')
+
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">
+                            {{ __('Nom') }}
+                        </label>
+                        <input type="text" name="name" id="name" value="{{ old('name', auth()->user()->name) }}"
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm 
+                                      focus:border-[#157e74] focus:ring-[#157e74]">
+                        @error('name')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">
+                            {{ __('Email') }}
+                        </label>
+                        <input type="email" name="email" id="email" value="{{ old('email', auth()->user()->email) }}"
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm 
+                                      focus:border-[#157e74] focus:ring-[#157e74]">
+                        @error('email')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button type="submit" 
+                                class="inline-flex items-center px-4 py-2 bg-[#157e74] border border-transparent 
+                                       rounded-lg font-semibold text-sm text-white tracking-widest 
+                                       hover:bg-[#279078] focus:bg-[#279078] active:bg-[#157e74] 
+                                       focus:outline-none focus:ring-2 focus:ring-[#157e74] focus:ring-offset-2 
+                                       transition ease-in-out duration-150">
+                            {{ __('Enregistrer') }}
+                        </button>
+
+                        @if (session('status') === 'profile-updated')
+                            <p class="text-sm text-gray-600">
+                                {{ __('Enregistré.') }}
+                            </p>
+                        @endif
+                    </div>
+                </form>
             </div>
         </div>
 
-        <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-            <div class="max-w-xl">
-                <section>
-                    <header>
-                        <h2 class="text-lg font-medium text-gray-900">
-                            {{ __('Mettre à jour le mot de passe') }}
-                        </h2>
+        <div class="p-4 sm:p-8 bg-white shadow-lg sm:rounded-xl">
+            <div class="max-w-xl mx-auto">
+                <header class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">
+                        {{ __('Mettre à jour le mot de passe') }}
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {{ __('Assurez-vous que votre compte utilise un mot de passe long et aléatoire pour rester sécurisé.') }}
+                    </p>
+                </header>
 
-                        <p class="mt-1 text-sm text-gray-600">
-                            {{ __('Assurez-vous que votre compte utilise un mot de passe long et aléatoire pour rester sécurisé.') }}
-                        </p>
-                    </header>
+                <form method="post" action="{{ route('password.update') }}" class="space-y-6">
+                    @csrf
+                    @method('put')
 
-                    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
-                        @csrf
-                        @method('patch')
+                    <div>
+                        <label for="current_password" class="block text-sm font-medium text-gray-700">
+                            {{ __('Mot de passe actuel') }}
+                        </label>
+                        <input type="password" name="current_password" id="current_password"
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm 
+                                      focus:border-[#157e74] focus:ring-[#157e74]">
+                        @error('current_password')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                        <div>
-                            <x-input-label for="current_password" :value="__('Mot de passe actuel')" />
-                            <x-text-input id="current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
-                            <x-input-error :messages="$errors->get('current_password')" class="mt-2" />
-                        </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">
+                            {{ __('Nouveau mot de passe') }}
+                        </label>
+                        <input type="password" name="password" id="password"
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm 
+                                      focus:border-[#157e74] focus:ring-[#157e74]">
+                        @error('password')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                        <div>
-                            <x-input-label for="password" :value="__('Nouveau mot de passe')" />
-                            <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                        </div>
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700">
+                            {{ __('Confirmer le mot de passe') }}
+                        </label>
+                        <input type="password" name="password_confirmation" id="password_confirmation"
+                               class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm 
+                                      focus:border-[#157e74] focus:ring-[#157e74]">
+                        @error('password_confirmation')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-                        <div>
-                            <x-input-label for="password_confirmation" :value="__('Confirmer le mot de passe')" />
-                            <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                        </div>
+                    <div class="flex items-center gap-4">
+                        <button type="submit" 
+                                class="inline-flex items-center px-4 py-2 bg-[#157e74] border border-transparent 
+                                       rounded-lg font-semibold text-sm text-white tracking-widest 
+                                       hover:bg-[#279078] focus:bg-[#279078] active:bg-[#157e74] 
+                                       focus:outline-none focus:ring-2 focus:ring-[#157e74] focus:ring-offset-2 
+                                       transition ease-in-out duration-150">
+                            {{ __('Enregistrer') }}
+                        </button>
 
-                        <div class="flex items-center gap-4">
-                            <x-primary-button>{{ __('Enregistrer') }}</x-primary-button>
-
-                            @if (session('status') === 'password-updated')
-                                <p
-                                    x-data="{ show: true }"
-                                    x-show="show"
-                                    x-transition
-                                    x-init="setTimeout(() => show = false, 2000)"
-                                    class="text-sm text-gray-600"
-                                >{{ __('Enregistré.') }}</p>
-                            @endif
-                        </div>
-                    </form>
-                </section>
+                        @if (session('status') === 'password-updated')
+                            <p class="text-sm text-gray-600">
+                                {{ __('Enregistré.') }}
+                            </p>
+                        @endif
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -164,4 +245,51 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.getElementById('photo').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        console.log('Fichier sélectionné:', file.name, 'Type:', file.type, 'Taille:', file.size);
+        
+        // Prévisualisation de l'image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            console.log('Image chargée en prévisualisation');
+            const previewPhoto = document.getElementById('preview-photo');
+            if (previewPhoto) {
+                previewPhoto.src = e.target.result;
+            } else {
+                console.log('Création d\'un nouvel élément img');
+                const imgContainer = document.querySelector('.relative.h-24.w-24');
+                const newImg = document.createElement('img');
+                newImg.id = 'preview-photo';
+                newImg.src = e.target.result;
+                newImg.alt = '{{ auth()->user()->name }}';
+                newImg.className = 'h-24 w-24 object-cover rounded-full border-4 border-white shadow-lg';
+                imgContainer.innerHTML = '';
+                imgContainer.appendChild(newImg);
+            }
+        }
+        reader.readAsDataURL(file);
+        
+        // Soumission automatique du formulaire
+        console.log('Soumission du formulaire...');
+        document.getElementById('profile-photo-form').submit();
+    }
+});
+
+// Vérifier l'état actuel de l'image
+window.addEventListener('load', function() {
+    const currentPhoto = document.getElementById('preview-photo');
+    if (currentPhoto) {
+        console.log('URL actuelle de la photo:', currentPhoto.src);
+        currentPhoto.addEventListener('error', function() {
+            console.log('Erreur de chargement de l\'image');
+        });
+    }
+});
+</script>
+@endpush
 @endsection 

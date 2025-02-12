@@ -22,7 +22,7 @@
                         </h3>
                         <div class="mt-2">
                             <p class="text-sm text-gray-500">
-                                {{ __('Êtes-vous sûr de vouloir accepter cette proposition d\'échange ? Cette action ne peut pas être annulée.') }}
+                                {{ __('Êtes-vous sûr de vouloir accepter cette proposition ?') }}
                             </p>
                         </div>
                     </div>
@@ -31,12 +31,11 @@
             <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <form action="{{ route('propositions.accept', $proposition) }}" method="POST" class="inline">
                     @csrf
-                    @method('PATCH')
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#35a79b] text-base font-medium text-white hover:bg-[#2c8c82] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#35a79b] sm:ml-3 sm:w-auto sm:text-sm">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
                         {{ __('Confirmer') }}
                     </button>
                 </form>
-                <button type="button" onclick="hideAcceptModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#35a79b] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                <button type="button" onclick="hideAcceptModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                     {{ __('Annuler') }}
                 </button>
             </div>
@@ -77,7 +76,6 @@
             <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <form action="{{ route('propositions.reject', $proposition) }}" method="POST" class="inline">
                     @csrf
-                    @method('PATCH')
                     <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
                         {{ __('Confirmer') }}
                     </button>
@@ -97,9 +95,8 @@
         <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form action="{{ route('propositions.update-meeting', $proposition) }}" method="POST">
+            <form action="{{ route('propositions.update.meeting', $proposition) }}" method="POST">
                 @csrf
-                @method('PATCH')
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
                         {{ __('Modifier les détails du rendez-vous') }}
@@ -152,7 +149,6 @@
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <form action="{{ route('propositions.complete', $proposition) }}" method="POST">
                 @csrf
-                @method('PATCH')
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start mb-6">
                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-[#35a79b] bg-opacity-10 sm:mx-0 sm:h-10 sm:w-10">
@@ -220,6 +216,30 @@
 
 @push('scripts')
 <script>
+function showAcceptModal() {
+    document.getElementById('accept-modal').classList.remove('hidden');
+}
+
+function hideAcceptModal() {
+    document.getElementById('accept-modal').classList.add('hidden');
+}
+
+function showRejectModal() {
+    document.getElementById('reject-modal').classList.remove('hidden');
+}
+
+function hideRejectModal() {
+    document.getElementById('reject-modal').classList.add('hidden');
+}
+
+function showUpdateMeetingModal() {
+    document.getElementById('update-meeting-modal').classList.remove('hidden');
+}
+
+function hideUpdateMeetingModal() {
+    document.getElementById('update-meeting-modal').classList.add('hidden');
+}
+
 function showCompleteModal() {
     document.getElementById('complete-modal').classList.remove('hidden');
 }

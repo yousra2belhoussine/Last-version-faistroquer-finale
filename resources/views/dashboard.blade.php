@@ -7,15 +7,7 @@
         <div class="mb-6 p-6 bg-white rounded-xl shadow-sm border border-[#35a79b]/20">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    @if(auth()->user()->profile_photo_url)
-                        <img src="{{ auth()->user()->profile_photo_url }}" 
-                             alt="{{ auth()->user()->name }}" 
-                             class="h-16 w-16 rounded-full object-cover ring-4 ring-[#35a79b]/20">
-                    @else
-                        <div class="h-16 w-16 rounded-full bg-gradient-to-br from-[#35a79b] to-[#2c8a7e] flex items-center justify-center text-xl font-bold text-white shadow-md">
-                            {{ substr(auth()->user()->name, 0, 1) }}
-                        </div>
-                    @endif
+                    <x-user-avatar :user="auth()->user()" size="lg" />
                     <div>
                         <h1 class="text-xl font-bold text-[#2c8a7e]">{{ auth()->user()->name }}</h1>
                         <p class="text-sm text-[#35a79b]/70">{{ auth()->user()->email }}</p>
@@ -118,15 +110,7 @@
                                        class="block bg-gradient-to-br from-white to-[#35a79b]/5 rounded-xl border border-[#35a79b]/20 p-4 hover:shadow-md hover:border-[#35a79b]/40 transition-all duration-200">
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center min-w-0">
-                                                @if($message['other_user']['profile_photo_url'])
-                                                    <img src="{{ $message['other_user']['profile_photo_url'] }}" 
-                                                         alt="{{ $message['other_user']['name'] }}" 
-                                                         class="h-10 w-10 rounded-full object-cover ring-2 ring-[#35a79b]/20">
-                                                @else
-                                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-[#35a79b] to-[#2c8a7e] flex items-center justify-center text-sm font-medium text-white shadow-sm">
-                                                        {{ substr($message['other_user']['name'], 0, 1) }}
-                                                    </div>
-                                                @endif
+                                                <x-user-avatar :user="$message['other_user']" size="sm" />
                                                 <div class="ml-3 min-w-0">
                                                     <p class="text-sm font-medium text-[#2c8a7e] truncate">{{ $message['other_user']['name'] }}</p>
                                                     @if(isset($message['ad']) && $message['ad'])

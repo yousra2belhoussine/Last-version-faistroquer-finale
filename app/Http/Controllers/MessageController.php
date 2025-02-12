@@ -57,6 +57,9 @@ class MessageController extends Controller
         \Log::info('Conversation ID: ' . $conversation->id);
         \Log::info('User ID: ' . auth()->id());
         
+        // Charger explicitement la conversation avec ses participants
+        $conversation->load('participants');
+        
         // Vérifier si la conversation existe et a des participants
         if (!$conversation || !$conversation->participants) {
             \Log::error('Conversation invalide ou sans participants');
@@ -72,9 +75,11 @@ class MessageController extends Controller
         }
 
         try {
-            // Récupérer toutes les conversations pour la sidebar
+            // Récupérer toutes les conversations pour la sidebar avec les participants et leurs photos
             $conversations = auth()->user()->conversations()
-                ->with(['participants', 'lastMessage'])
+                ->with(['participants' => function($query) {
+                    $query->select('users.id', 'users.name', 'users.profile_photo_path');
+                }, 'lastMessage'])
                 ->withCount(['messages as unread_count' => function ($query) {
                     $query->where('sender_id', '!=', auth()->id())
                         ->whereDoesntHave('reads', function($q) {
@@ -92,9 +97,11 @@ class MessageController extends Controller
 
             \Log::info('Nombre de conversations dans la sidebar: ' . $conversations->count());
 
-            // Récupérer les messages de la conversation actuelle
+            // Récupérer les messages de la conversation actuelle avec les expéditeurs et leurs photos
             $messages = $conversation->messages()
-                ->with('sender')
+                ->with(['sender' => function($query) {
+                    $query->select('users.id', 'users.name', 'users.profile_photo_path');
+                }])
                 ->orderBy('created_at', 'asc')
                 ->get();
 

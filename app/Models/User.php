@@ -96,7 +96,9 @@ class User extends Authenticatable
      */
     public function badges()
     {
-        return $this->hasMany(Badge::class);
+        return $this->belongsToMany(Badge::class, 'user_badges')
+                    ->withTimestamps()
+                    ->withPivot('awarded_at', 'expires_at');
     }
 
     public function reports()
@@ -185,12 +187,15 @@ class User extends Authenticatable
 
     /**
      * Get the URL of the user's profile photo.
+     *
+     * @return string
      */
     public function getProfilePhotoUrlAttribute()
     {
-        if ($this->profile_photo_path && Storage::disk('public')->exists($this->profile_photo_path)) {
-            return url('storage/' . $this->profile_photo_path);
+        if ($this->profile_photo_path) {
+            return Storage::disk('public')->url($this->profile_photo_path);
         }
-        return null;
+
+        return asset('images/default-avatar.png');
     }
 }

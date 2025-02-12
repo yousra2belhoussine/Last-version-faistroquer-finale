@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -81,5 +82,56 @@ class ProfileController extends Controller
         return view('profile.badges', [
             'user' => Auth::user()
         ]);
+    }
+
+    public function updatePhoto(Request $request)
+    {
+        try {
+            $request->validate([
+                'photo' => ['required', 'image', 'max:2048'], // Max 2MB
+            ]);
+
+            $user = auth()->user();
+            
+            \Log::info('Début de la mise à jour de la photo de profil', [
+                'user_id' => $user->id,
+                'has_file' => $request->hasFile('photo')
+            ]);
+
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                
+                // Supprimer l'ancienne photo si elle existe
+                if ($user->profile_photo_path) {
+                    \Log::info('Suppression de l\'ancienne photo', [
+                        'old_path' => $user->profile_photo_path
+                    ]);
+                    Storage::disk('public')->delete($user->profile_photo_path);
+                }
+
+                // Stocker la nouvelle photo
+                $path = $file->store('profile-photos', 'public');
+                \Log::info('Nouvelle photo stockée', [
+                    'new_path' => $path,
+                    'full_url' => Storage::disk('public')->url($path)
+                ]);
+                
+                // Mettre à jour le chemin de la photo dans la base de données
+                $user->profile_photo_path = $path;
+                $user->save();
+
+                \Log::info('Photo de profil mise à jour avec succès');
+                
+                return back()->with('status', 'photo-updated');
+            }
+
+            return back()->with('error', 'Aucune photo n\'a été téléchargée.');
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la mise à jour de la photo de profil', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('error', 'Une erreur est survenue lors de la mise à jour de la photo.');
+        }
     }
 }

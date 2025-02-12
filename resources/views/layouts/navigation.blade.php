@@ -1,5 +1,3 @@
-
-
 <!-- Navigation -->
 <nav x-data="{ mobileMenuOpen: false }" class="bg-gradient-to-r from-[#157e74] to-[#279078] border-b border-[#a3cca8]/20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -9,7 +7,9 @@
                 <!-- Logo -->
                 <div class="flex-shrink-0 flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center transition-transform duration-200 hover:scale-105">
-                        <img src="{{ asset('images/logo-faistroquerfr.svg') }}" alt="Faistroquer" class="h-10 w-auto brightness-0 invert">
+                        <div class="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                            <img src="{{ asset('images/logo-faistroquerfr.svg') }}" alt="FAISTROQUER" class="h-8 w-auto">
+                        </div>
                     </a>
                 </div>
 
@@ -51,14 +51,15 @@
                     </a>
 
                     <!-- User Menu -->
-                    <div class="ml-3 relative" x-data="{ open: false }">
+                    <div class="ml-3 relative z-50" x-data="{ open: false }">
                         <div>
                             <button @click="open = !open" @click.away="open = false" class="group flex items-center space-x-2 text-white">
                                 <div class="relative">
-                                    @if(auth()->user()->profile_photo_url)
-                                        <img src="{{ auth()->user()->profile_photo_url }}" 
+                                    @if(auth()->user()->profile_photo_path)
+                                        <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
                                              alt="{{ auth()->user()->name }}" 
-                                             class="h-8 w-8 rounded-full object-cover border-2 border-white group-hover:border-[#a3cca8] transition-colors duration-200">
+                                             class="h-8 w-8 rounded-full object-cover border-2 border-white group-hover:border-[#a3cca8] transition-colors duration-200"
+                                             onerror="this.onerror=null; this.src='{{ asset('images/default-avatar.png') }}';">
                                     @else
                                         <div class="h-8 w-8 rounded-full bg-white flex items-center justify-center text-[#157e74] font-semibold border-2 border-white group-hover:bg-[#a3cca8] transition-colors duration-200">
                                             {{ substr(auth()->user()->name, 0, 1) }}
@@ -79,7 +80,7 @@
                              x-transition:leave="transition ease-in duration-150"
                              x-transition:leave-start="transform opacity-100 scale-100"
                              x-transition:leave-end="transform opacity-0 scale-95"
-                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-[#a3cca8] ring-opacity-5 focus:outline-none divide-y divide-gray-100">
+                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-[#a3cca8] ring-opacity-5 focus:outline-none divide-y divide-gray-100 z-50">
                             <div class="py-1">
                                 <a href="{{ route('dashboard') }}" class="group flex items-center px-4 py-2 text-sm text-[#157e74] hover:bg-[#a3cca8]/10">
                                     <svg class="mr-3 h-5 w-5 text-[#157e74] group-hover:text-[#279078]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -187,8 +188,8 @@
             <div class="pt-4 pb-3 border-t border-gray-200">
                 <div class="flex items-center px-4">
                     <div class="flex-shrink-0">
-                        @if(auth()->user()->profile_photo_url)
-                            <img src="{{ auth()->user()->profile_photo_url }}" 
+                        @if(auth()->user()->profile_photo_path)
+                            <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
                                  alt="{{ auth()->user()->name }}" 
                                  class="h-10 w-10 rounded-full object-cover border-2 border-[#157e74]">
                         @else

@@ -16,49 +16,110 @@ class PropositionController extends Controller
 
     public function store(Request $request, Ad $ad)
     {
-        $validated = $request->validate([
-            'offer' => 'required|string', 
-            'message' => 'nullable|string',
-            'online_exchange' => 'boolean',
-            'meeting_location' => 'required_if:online_exchange,false|nullable|string',
-            'meeting_date' => 'required_if:online_exchange,false|nullable|date',
-            'ad_id' => 'required|exists:ads,id',
-        ]);
+        try {
+            // Vérifier que l'utilisateur ne fait pas de proposition sur sa propre annonce
+            if ($ad->user_id === Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous ne pouvez pas faire de proposition sur votre propre annonce'
+                ], 422);
+            }
 
-         // Si l'échange en ligne est coché, définissez les champs meeting_location et meeting_date à null
-         if ($request->online_exchange) {
-            $validated['meeting_location'] = null;
-            $validated['meeting_date'] = null;
+            $validated = $request->validate([
+                'offer' => 'required|string|max:255',
+                'message' => 'nullable|string',
+                'online_exchange' => 'boolean',
+                'meeting_location' => 'required_if:online_exchange,false|nullable|string',
+                'meeting_date' => 'required_if:online_exchange,false|nullable|date',
+            ]);
+
+            // Si l'échange en ligne est coché, définissez les champs meeting_location et meeting_date à null
+            if ($request->boolean('online_exchange')) {
+                $validated['meeting_location'] = null;
+                $validated['meeting_date'] = null;
+            }
+
+            $proposition = new Proposition($validated);
+            $proposition->ad_id = $ad->id;
+            $proposition->user_id = Auth::id();
+            $proposition->status = 'pending';
+            $proposition->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Votre proposition a été envoyée avec succès',
+                'proposition' => $proposition
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur de validation',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de la création de la proposition:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la création de la proposition'
+            ], 500);
         }
-
-        $proposition = new Proposition($validated);
-        $proposition->ad_id = $ad->id;
-        $proposition->user_id = Auth::id();
-        $proposition->status = 'pending';
-        $proposition->save();
-
-        return redirect()->route('ads.show', $ad)
-            ->with('success', __('Your proposition has been sent successfully.'));
     }
 
     public function accept(Proposition $proposition)
     {
-        $this->authorize('update', $proposition->ad);
+        try {
+            if (!$proposition->isPending()) {
+                return back()->with('error', __('Cette proposition ne peut plus être acceptée.'));
+            }
 
-        $proposition->update(['status' => 'accepted']);
+            $this->authorize('update', $proposition->ad);
 
-        return redirect()->back()
-            ->with('success', __('Proposition accepted successfully.'));
+            $proposition->update([
+                'status' => 'accepted',
+                'accepted_at' => now()
+            ]);
+
+            return redirect()->back()
+                ->with('success', __('La proposition a été acceptée avec succès.'));
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de l\'acceptation de la proposition:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', __('Une erreur est survenue lors de l\'acceptation de la proposition.'));
+        }
     }
 
     public function reject(Proposition $proposition)
     {
-        $this->authorize('update', $proposition->ad);
+        try {
+            if (!$proposition->isPending()) {
+                return back()->with('error', __('Cette proposition ne peut plus être refusée.'));
+            }
 
-        $proposition->update(['status' => 'rejected']);
+            $this->authorize('update', $proposition->ad);
 
-        return redirect()->back()
-            ->with('success', __('Proposition rejected successfully.'));
+            $proposition->update([
+                'status' => 'rejected',
+                'rejected_at' => now()
+            ]);
+
+            return redirect()->back()
+                ->with('success', __('La proposition a été refusée.'));
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors du refus de la proposition:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', __('Une erreur est survenue lors du refus de la proposition.'));
+        }
     }
 
     public function complete(Request $request, Proposition $proposition)

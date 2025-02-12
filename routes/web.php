@@ -31,4 +31,12 @@ require __DIR__.'/web/messaging.php';
 // Propositions routes
 Route::middleware('auth')->group(function () {
     Route::get('/propositions', [PropositionController::class, 'index'])->name('propositions.index');
+    Route::get('/propositions/{proposition}', [PropositionController::class, 'show'])->name('propositions.show');
+    Route::post('/propositions/{ad}', [PropositionController::class, 'store'])->name('propositions.store');
+    Route::post('/propositions/{proposition}/accept', [PropositionController::class, 'accept'])->name('propositions.accept');
+    Route::post('/propositions/{proposition}/reject', [PropositionController::class, 'reject'])->name('propositions.reject');
+    Route::post('/propositions/{proposition}/cancel', [PropositionController::class, 'cancel'])->name('propositions.cancel');
+    Route::post('/propositions/{proposition}/complete', [PropositionController::class, 'complete'])->name('propositions.complete');
+    Route::post('/propositions/{proposition}/feedback', [PropositionController::class, 'feedback'])->name('propositions.feedback');
+    Route::post('/propositions/{proposition}/meeting', [PropositionController::class, 'updateMeeting'])->name('propositions.update.meeting');
 });
