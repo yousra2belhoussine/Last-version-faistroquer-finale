@@ -33,9 +33,7 @@
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h1 class="text-2xl font-bold text-[#157e74]">{{ $ad->title }}</h1>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $ad->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                {{ $ad->status === 'active' ? 'Actif' : 'En attente' }}
-                            </span>
+                            
                         </div>
 
                         <!-- Images avec effet carousel -->
@@ -43,7 +41,7 @@
                             @if($ad->images && $ad->images->count() > 0)
                                 <div class="relative"> 
                                     @foreach($ad->images as $image)
-                                        <img src="{{ asset('storage/' . $image->image_path) }}" 
+                                        <img src="{{ $image->url }}" 
                                              alt="Image de l'annonce" 
                                              class="w-full h-96 object-cover">
                                     @endforeach
@@ -89,15 +87,7 @@
 
                 <!-- Ce que recherche le vendeur -->
                 <div class="bg-white rounded-2xl shadow-lg p-8">
-                    <h2 class="text-xl font-semibold text-[#157e74] mb-6 flex items-center">
-                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l2.879-2.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        À échanger contre
-                    </h2>
-                    <div class="bg-gradient-to-br from-[#157e74]/5 to-[#a3cca8]/5 rounded-2xl p-6">
-                        <p class="text-gray-700 leading-relaxed">{{ $ad->exchange_with }}</p>
-                    </div>
+                    <x-exchange-details :ad="$ad" />
                 </div>
             </div>
 

@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('excerpt')->nullable();
-            $table->longText('content');
+            $table->text('description');
             $table->string('featured_image')->nullable();
-            $table->string('category');
+            $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            $table->string('status')->default('pending');
             $table->boolean('is_published')->default(false);
             $table->timestamp('published_at')->nullable();
             $table->timestamps();

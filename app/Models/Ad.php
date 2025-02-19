@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ad extends Model
 {
@@ -28,7 +30,8 @@ class Ad extends Model
         'is_featured',
         'views_count',
         'region_id',
-        'expires_at'
+        'expires_at',
+        'rejection_reason'
     ];
 
     protected $casts = [
@@ -43,12 +46,12 @@ class Ad extends Model
         'deleted_at' => 'datetime'
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
@@ -58,14 +61,19 @@ class Ad extends Model
         return $this->belongsTo(Department::class);
     }
 
-    public function propositions()
+    public function images(): HasMany
     {
-        return $this->hasMany(Proposition::class);
+        return $this->hasMany(Image::class)->orderBy('order');
     }
 
-    public function images()
+    public function primaryImage()
     {
-        return $this->hasMany(Image::class);
+        return $this->hasOne(Image::class)->where('is_primary', true);
+    }
+
+    public function propositions(): HasMany
+    {
+        return $this->hasMany(Proposition::class);
     }
 
     public function scopeFeatured($query)

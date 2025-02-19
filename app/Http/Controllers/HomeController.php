@@ -19,8 +19,9 @@ class HomeController extends Controller
     public function index()
     {
         $categories = Category::withCount('ads')->get();
-        $featuredAds = Ad::featured()->with(['category', 'user'])->take(8)->get();
+        $featuredAds = Ad::featured()->where('status', 'active')->with(['category', 'user'])->take(8)->get();
         $latestAds = Ad::with(['category', 'user', 'images'])
+            ->where('status', 'active')
             ->latest()
             ->take(8)
             ->get();

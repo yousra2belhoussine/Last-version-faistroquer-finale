@@ -29,6 +29,7 @@ class User extends Authenticatable
         'bio',
         'notification_preferences',
         'profile_photo_path',
+        'is_admin',
     ];
 
     protected $hidden = [
@@ -52,7 +53,7 @@ class User extends Authenticatable
 
     public function isAdmin()
     {
-        return $this->is_admin;
+        return $this->is_admin === true;
     }
 
     public function isProfessional()

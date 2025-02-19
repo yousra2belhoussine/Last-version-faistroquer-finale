@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex h-screen bg-gray-50">
+    <div class="flex h-[calc(100vh-4rem)] bg-gray-50">
         <!-- Sidebar -->
-        <div class="w-1/3 border-r bg-white shadow-lg">
+        <div class="w-1/3 border-r bg-white shadow-lg overflow-hidden">
             <!-- User Profile -->
             <div class="p-4 border-b bg-gradient-to-r from-[#157e74] to-[#279078]">
                 <div class="flex items-center">
@@ -25,14 +25,15 @@
             </div>
 
             <!-- Conversations List -->
-            <div class="flex-1 overflow-y-auto">
+            <div class="overflow-y-auto h-[calc(100vh-8rem)]">
                 @foreach($conversations as $conv)
                     @php
                         $otherParticipant = $conv->participants->where('id', '!=', auth()->id())->first();
                     @endphp
                     @if($otherParticipant)
                         <a href="{{ route('messages.show', $conv) }}" 
-                           class="block p-4 hover:bg-[#35a79b]/5 transition-all duration-200 {{ request()->route('conversation') && request()->route('conversation')->id === $conv->id ? 'bg-[#35a79b]/10 border-l-4 border-[#157e74]' : '' }}">
+                           class="conversation-link block p-4 hover:bg-[#35a79b]/5 transition-all duration-200 {{ request()->route('conversation') && request()->route('conversation')->id === $conv->id ? 'active bg-[#35a79b]/10 border-l-4 border-[#157e74]' : '' }}"
+                           data-conversation-id="{{ $conv->id }}">
                             <div class="flex items-center">
                                 @if($otherParticipant->profile_photo_path)
                                     <img src="{{ asset('storage/' . $otherParticipant->profile_photo_path) }}" 
@@ -47,8 +48,10 @@
                                 <div class="ml-4 flex-1">
                                     <div class="flex items-center justify-between">
                                         <h3 class="text-sm font-medium text-[#157e74]">{{ $otherParticipant->name }}</h3>
-                                        @if($conv->messages->isNotEmpty())
-                                            <span class="text-xs text-[#6dbaaf]">{{ $conv->messages->first()->created_at->diffForHumans() }}</span>
+                                        @if($conv->unread_count > 0)
+                                            <span class="notification-badge bg-[#157e74] text-white text-xs px-2 py-1 rounded-full">
+                                                {{ $conv->unread_count }}
+                                            </span>
                                         @endif
                                     </div>
                                     @if($conv->messages->isNotEmpty())
@@ -63,7 +66,7 @@
         </div>
 
         <!-- Chat Area -->
-        <div class="flex-1 flex flex-col h-screen bg-gray-50">
+        <div class="flex-1 flex flex-col overflow-hidden">
             @if(isset($conversation) && $conversation->participants->isNotEmpty())
                 @php
                     $otherParticipant = $conversation->participants->where('id', '!=', auth()->id())->first();
@@ -90,7 +93,7 @@
                     </div>
 
                     <!-- Messages Container -->
-                    <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages-container">
+                    <div class="flex-1 overflow-y-auto p-4" id="messages-container" style="max-height: calc(100vh - 13rem);">
                         @if(!isset($messages) || $messages->isEmpty())
                             <div class="flex flex-col items-center justify-center h-full text-center">
                                 <div class="w-24 h-24 bg-gradient-to-br from-[#157e74] to-[#279078] rounded-full flex items-center justify-center mb-4 shadow-lg animate-pulse">
@@ -102,53 +105,60 @@
                                 <p class="text-[#6dbaaf]">Commencez la conversation en envoyant un message</p>
                             </div>
                         @else
-                            @foreach($messages as $message)
-                                <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }} animate-fade-in">
-                                    @if($message->sender_id !== auth()->id())
-                                        <div class="flex-shrink-0 mr-3">
-                                            @if($message->sender && $message->sender->profile_photo_path)
-                                                <img src="{{ asset('storage/' . $message->sender->profile_photo_path) }}" 
-                                                     alt="{{ $message->sender->name }}" 
-                                                     class="h-8 w-8 rounded-full object-cover ring-2 ring-[#35a79b]/20 shadow-md"
-                                                     onerror="this.onerror=null; this.src='{{ asset('images/default-avatar.png') }}';">
-                                            @else
-                                                <div class="h-8 w-8 rounded-full bg-[#157e74] flex items-center justify-center text-white text-sm font-semibold ring-2 ring-[#35a79b]/20 shadow-md">
-                                                    {{ $message->sender ? substr($message->sender->name, 0, 1) : '?' }}
-                                                </div>
-                                            @endif
+                            <div class="flex flex-col space-y-4">
+                                @foreach($messages->sortBy('created_at') as $message)
+                                    <div class="flex {{ $message->sender_id === auth()->id() ? 'justify-end' : 'justify-start' }} animate-fade-in">
+                                        @if($message->sender_id !== auth()->id())
+                                            <div class="flex-shrink-0 mr-3">
+                                                @if($message->sender && $message->sender->profile_photo_path)
+                                                    <img src="{{ asset('storage/' . $message->sender->profile_photo_path) }}" 
+                                                         alt="{{ $message->sender->name }}" 
+                                                         class="h-8 w-8 rounded-full object-cover ring-2 ring-[#35a79b]/20 shadow-md"
+                                                         onerror="this.onerror=null; this.src='{{ asset('images/default-avatar.png') }}';">
+                                                @else
+                                                    <div class="h-8 w-8 rounded-full bg-[#157e74] flex items-center justify-center text-white text-sm font-semibold ring-2 ring-[#35a79b]/20 shadow-md">
+                                                        {{ $message->sender ? substr($message->sender->name, 0, 1) : '?' }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        <div class="{{ $message->sender_id === auth()->id() ? 'bg-gradient-to-r from-[#157e74] to-[#279078] text-white' : 'bg-white text-gray-800' }} rounded-2xl px-4 py-2 max-w-[70%] shadow-md hover:shadow-lg transition-shadow duration-200">
+                                            <p class="text-sm">{{ $message->content }}</p>
+                                            <span class="text-xs {{ $message->sender_id === auth()->id() ? 'text-white/70' : 'text-gray-500' }} block mt-1">
+                                                {{ $message->created_at->format('H:i') }}
+                                            </span>
                                         </div>
-                                    @endif
-                                    <div class="{{ $message->sender_id === auth()->id() ? 'bg-gradient-to-r from-[#157e74] to-[#279078] text-white' : 'bg-white text-gray-800' }} rounded-2xl px-4 py-2 max-w-[70%] shadow-md hover:shadow-lg transition-shadow duration-200">
-                                        <p class="text-sm">{{ $message->content }}</p>
-                                        <span class="text-xs {{ $message->sender_id === auth()->id() ? 'text-white/70' : 'text-gray-500' }} block mt-1">
-                                            {{ $message->created_at->format('H:i') }}
-                                        </span>
+                                        @if($message->sender_id === auth()->id())
+                                            <div class="flex-shrink-0 ml-3">
+                                                @if(auth()->user()->profile_photo_path)
+                                                    <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
+                                                         alt="{{ auth()->user()->name }}" 
+                                                         class="h-8 w-8 rounded-full object-cover ring-2 ring-[#35a79b]/20 shadow-md"
+                                                         onerror="this.onerror=null; this.src='{{ asset('images/default-avatar.png') }}';">
+                                                @else
+                                                    <div class="h-8 w-8 rounded-full bg-[#157e74] flex items-center justify-center text-white text-sm font-semibold ring-2 ring-[#35a79b]/20 shadow-md">
+                                                        {{ substr(auth()->user()->name, 0, 1) }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
                                     </div>
-                                    @if($message->sender_id === auth()->id())
-                                        <div class="flex-shrink-0 ml-3">
-                                            @if(auth()->user()->profile_photo_path)
-                                                <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" 
-                                                     alt="{{ auth()->user()->name }}" 
-                                                     class="h-8 w-8 rounded-full object-cover ring-2 ring-[#35a79b]/20 shadow-md"
-                                                     onerror="this.onerror=null; this.src='{{ asset('images/default-avatar.png') }}';">
-                                            @else
-                                                <div class="h-8 w-8 rounded-full bg-[#157e74] flex items-center justify-center text-white text-sm font-semibold ring-2 ring-[#35a79b]/20 shadow-md">
-                                                    {{ substr(auth()->user()->name, 0, 1) }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endif
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         @endif
                     </div>
 
                     <!-- Message Input -->
-                    <div class="p-4 bg-white border-t shadow-lg">
-                        <form action="{{ route('messages.store', $conversation) }}" method="POST" class="flex items-center space-x-4">
+                    <div class="p-4 bg-white border-t shadow-lg mt-auto">
+                        <form action="{{ route('messages.store', $conversation) }}" 
+                              method="POST" 
+                              class="flex items-center space-x-4" 
+                              id="message-form"
+                              data-conversation-id="{{ $conversation->id }}">
                             @csrf
                             <input type="text" 
                                    name="content" 
+                                   id="message-input"
                                    placeholder="Écrivez votre message..." 
                                    class="flex-1 px-4 py-2 rounded-full border-[#a3cca8] focus:ring-2 focus:ring-[#157e74] focus:border-[#157e74] shadow-sm hover:shadow-md transition-shadow duration-200"
                                    required>
@@ -195,6 +205,11 @@
             }
         }
 
+        #messages-container {
+            scrollbar-width: thin;
+            scrollbar-color: #a3cca8 #f1f1f1;
+        }
+
         #messages-container::-webkit-scrollbar {
             width: 6px;
         }
@@ -211,26 +226,155 @@
         #messages-container::-webkit-scrollbar-thumb:hover {
             background: #157e74;
         }
+
+        .messages-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
     </style>
     @endpush
 
     @push('scripts')
     <script>
-        // Scroll to bottom of messages container
+    document.addEventListener('DOMContentLoaded', function() {
         const messagesContainer = document.getElementById('messages-container');
-        if (messagesContainer) {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const conversationLinks = document.querySelectorAll('.conversation-link');
+
+        // Fonction pour faire défiler jusqu'en bas
+        function scrollToBottom() {
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
         }
 
-        // Auto-scroll on new message
-        const messageForm = document.querySelector('form');
+        // Faire défiler jusqu'en bas au chargement initial
+        scrollToBottom();
+
+        // Observer les changements dans le conteneur de messages
+        const observer = new MutationObserver(scrollToBottom);
+        if (messagesContainer) {
+            observer.observe(messagesContainer, { childList: true, subtree: true });
+        }
+
+        // Mettre à jour les notifications
+        function updateNotifications() {
+            // Supprimer le badge de la conversation active
+            const activeConversation = document.querySelector('.conversation-link.active');
+            if (activeConversation) {
+                const badge = activeConversation.querySelector('.notification-badge');
+                if (badge) {
+                    badge.remove();
+                }
+            }
+        }
+
+        // Appeler updateNotifications au chargement de la page
+        updateNotifications();
+
+        // Ajouter des écouteurs d'événements pour les liens de conversation
+        conversationLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                // Supprimer la classe active de tous les liens
+                conversationLinks.forEach(l => l.classList.remove('active'));
+                // Ajouter la classe active au lien cliqué
+                this.classList.add('active');
+                // Mettre à jour les notifications
+                updateNotifications();
+            });
+        });
+
+        // Gérer la soumission du formulaire
         if (messageForm) {
-            messageForm.addEventListener('submit', () => {
-                setTimeout(() => {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }, 100);
+            messageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(messageForm);
+                const messageContent = messageInput.value.trim();
+                
+                if (!messageContent) return;
+
+                // Envoyer le message via AJAX
+                fetch(messageForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageInput.value = '';
+                        // Recharger les messages sans recharger toute la page
+                        fetchLatestMessages();
+                        scrollToBottom();
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                });
             });
         }
+
+        // Fonction pour récupérer les derniers messages
+        function fetchLatestMessages() {
+            const conversationId = messageForm.getAttribute('data-conversation-id');
+            if (!conversationId) return;
+
+            fetch(`/messages/${conversationId}/fetch`, {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (messagesContainer) {
+                        // Mettre à jour les messages
+                        const messagesHtml = data.messages.map(message => createMessageHtml(message)).join('');
+                        messagesContainer.innerHTML = messagesHtml;
+                        scrollToBottom();
+                        // Mettre à jour les notifications après le chargement des messages
+                        updateNotifications();
+                    }
+                }
+            });
+        }
+
+        // Fonction pour créer le HTML d'un message
+        function createMessageHtml(message) {
+            const isOwnMessage = message.sender_id === {{ auth()->id() }};
+            const avatarHtml = message.sender_avatar 
+                ? `<img src="${message.sender_avatar}" alt="${message.sender_name}" class="h-8 w-8 rounded-full object-cover ring-2 ring-[#35a79b]/20 shadow-md">`
+                : `<div class="h-8 w-8 rounded-full bg-[#157e74] flex items-center justify-center text-white text-sm font-semibold ring-2 ring-[#35a79b]/20 shadow-md">${message.sender_name.charAt(0)}</div>`;
+
+            return `
+                <div class="flex ${isOwnMessage ? 'justify-end' : 'justify-start'} animate-fade-in">
+                    ${!isOwnMessage ? `<div class="flex-shrink-0 mr-3">${avatarHtml}</div>` : ''}
+                    <div class="${isOwnMessage ? 'bg-gradient-to-r from-[#157e74] to-[#279078] text-white' : 'bg-white text-gray-800'} rounded-2xl px-4 py-2 max-w-[70%] shadow-md">
+                        <p class="text-sm">${message.content}</p>
+                        <span class="text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-500'} block mt-1">
+                            ${message.created_at}
+                        </span>
+                    </div>
+                    ${isOwnMessage ? `<div class="flex-shrink-0 ml-3">${avatarHtml}</div>` : ''}
+                </div>
+            `;
+        }
+
+        // Écouter les événements de saisie
+        if (messageInput) {
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    messageForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
+    });
     </script>
     @endpush
 @endsection 

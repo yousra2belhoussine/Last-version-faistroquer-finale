@@ -8,16 +8,41 @@ use Illuminate\Http\Request;
 
 class ArticleController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    private function checkAdmin()
+    {
+        if (!auth()->user()->is_admin) {
+            return redirect()->route('home')->with('error', 'Accès non autorisé.');
+        }
+    }
+
     /**
      * Display a listing of the articles.
      */
     public function index()
     {
-        $articles = Article::with('user')
-            ->orderBy('created_at', 'desc')
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
+        $articles = Article::with(['user', 'category'])
+            ->latest()
             ->paginate(10);
 
-        return view('admin.articles.index', compact('articles'));
+        $pendingCount = Article::where('status', 'pending')->count();
+        $approvedCount = Article::where('status', 'approved')->count();
+        $rejectedCount = Article::where('status', 'rejected')->count();
+
+        return view('admin.articles.index', compact(
+            'articles',
+            'pendingCount',
+            'approvedCount',
+            'rejectedCount'
+        ));
     }
 
     /**
@@ -33,14 +58,33 @@ class ArticleController extends Controller
      */
     public function store(Request $request)
     {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_published' => 'boolean',
-            'published_at' => 'nullable|date',
+            'description' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240'
         ]);
 
-        $article = Article::create($validated);
+        $article = Article::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'category_id' => $validated['category_id'],
+            'user_id' => auth()->id(),
+            'status' => 'pending'
+        ]);
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('articles', 'public');
+                $article->images()->create([
+                    'path' => $path
+                ]);
+            }
+        }
 
         return redirect()
             ->route('admin.articles.index')
@@ -52,6 +96,10 @@ class ArticleController extends Controller
      */
     public function show(Article $article)
     {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
         return view('admin.articles.show', compact('article'));
     }
 
@@ -68,14 +116,31 @@ class ArticleController extends Controller
      */
     public function update(Request $request, Article $article)
     {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_published' => 'boolean',
-            'published_at' => 'nullable|date',
+            'description' => 'required|string',
+            'category_id' => 'required|exists:categories,id',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240'
         ]);
 
-        $article->update($validated);
+        $article->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'category_id' => $validated['category_id']
+        ]);
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('articles', 'public');
+                $article->images()->create([
+                    'path' => $path
+                ]);
+            }
+        }
 
         return redirect()
             ->route('admin.articles.index')
@@ -96,21 +161,31 @@ class ArticleController extends Controller
 
     public function approve(Article $article)
     {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
         $article->update([
-            'is_published' => true,
-            'published_at' => now(),
+            'status' => 'approved',
+            'approved_at' => now()
         ]);
 
-        return redirect()->back()->with('success', 'Article approuvé avec succès!');
+        return redirect()->back()
+            ->with('success', 'L\'article a été approuvé avec succès.');
     }
 
     public function reject(Article $article)
     {
+        if ($response = $this->checkAdmin()) {
+            return $response;
+        }
+
         $article->update([
-            'is_published' => false,
-            'published_at' => null,
+            'status' => 'rejected',
+            'rejected_at' => now()
         ]);
 
-        return redirect()->back()->with('success', 'Article rejeté avec succès!');
+        return redirect()->back()
+            ->with('success', 'L\'article a été refusé.');
     }
 } 

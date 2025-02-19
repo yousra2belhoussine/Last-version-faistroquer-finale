@@ -101,7 +101,7 @@
                 <div class="relative aspect-w-16 aspect-h-9">
                     <a href="{{ route('ads.show', $ad) }}" class="block">
                         @if($ad->images->isNotEmpty())
-                            <img src="{{ asset('storage/' . $ad->images->first()->image_path) }}" 
+                            <img src="{{ $ad->images->first()->url }}" 
                                  alt="{{ $ad->title }}" 
                                  class="w-full h-48 object-cover rounded-t-2xl">
                         @else

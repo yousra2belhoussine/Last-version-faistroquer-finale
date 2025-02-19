@@ -5,7 +5,7 @@
         <!-- Image à gauche -->
         <div class="md:w-1/3 relative">
             @if($ad->images->isNotEmpty())
-                <img src="{{ asset('storage/' . $ad->images->first()->image_path) }}" 
+                <img src="{{ $ad->images->first()->url }}" 
                      alt="{{ $ad->title }}" 
                      class="w-full h-64 md:h-full object-cover rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none">
             @else

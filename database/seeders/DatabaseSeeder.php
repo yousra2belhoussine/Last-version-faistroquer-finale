@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             RegionSeeder::class,
             TestAdsSeeder::class,
+            TestUsersSeeder::class,
+            TestDataSeeder::class,
         ]);
     }
 }

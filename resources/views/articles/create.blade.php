@@ -1,101 +1,132 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="bg-white">
-    <div class="max-w-4xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
-        <div class="text-center">
-            <h1 class="text-4xl font-extrabold tracking-tight text-[#157e74] sm:text-5xl">Créer un article</h1>
-            <p class="mt-4 text-lg text-[#6dbaaf]">Partagez vos connaissances avec la communauté</p>
-        </div>
+<div class="py-12">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Créer un nouvel article</h2>
 
-        <div class="mt-12">
-            <form action="{{ route('articles.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
-                @csrf
+                <form action="{{ route('articles.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    @csrf
 
-                <div>
-                    <label for="title" class="block text-sm font-medium text-[#157e74]">Titre</label>
-                    <div class="mt-1">
-                        <input type="text" name="title" id="title" value="{{ old('title') }}" 
-                               class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300 rounded-md"
-                               required>
+                    <!-- Titre -->
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700">Titre de l'article</label>
+                        <input type="text" name="title" id="title" required
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#157e74] focus:ring focus:ring-[#157e74] focus:ring-opacity-50">
+                        @error('title')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('title')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
 
-                <div>
-                    <label for="excerpt" class="block text-sm font-medium text-[#157e74]">Extrait</label>
-                    <div class="mt-1">
-                        <textarea name="excerpt" id="excerpt" rows="3" 
-                                  class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300 rounded-md">{{ old('excerpt') }}</textarea>
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea name="description" id="description" rows="4" required
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#157e74] focus:ring focus:ring-[#157e74] focus:ring-opacity-50"></textarea>
+                        @error('description')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('excerpt')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
 
-                <div>
-                    <label for="content" class="block text-sm font-medium text-[#157e74]">Contenu</label>
-                    <div class="mt-1">
-                        <textarea name="content" id="content" rows="10" 
-                                  class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300 rounded-md"
-                                  required>{{ old('content') }}</textarea>
-                    </div>
-                    @error('content')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="category" class="block text-sm font-medium text-[#157e74]">Catégorie</label>
-                    <div class="mt-1">
-                        <select name="category" id="category" 
-                                class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300 rounded-md">
+                    <!-- Catégorie -->
+                    <div>
+                        <label for="category_id" class="block text-sm font-medium text-gray-700">Catégorie</label>
+                        <select name="category_id" id="category_id" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#157e74] focus:ring focus:ring-[#157e74] focus:ring-opacity-50">
                             <option value="">Sélectionnez une catégorie</option>
-                            <option value="Conseils" {{ old('category') == 'Conseils' ? 'selected' : '' }}>Conseils</option>
-                            <option value="Tutoriels" {{ old('category') == 'Tutoriels' ? 'selected' : '' }}>Tutoriels</option>
-                            <option value="Actualités" {{ old('category') == 'Actualités' ? 'selected' : '' }}>Actualités</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
                         </select>
+                        @error('category_id')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('category')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
 
-                <div>
-                    <label for="featured_image" class="block text-sm font-medium text-[#157e74]">Image de couverture</label>
-                    <div class="mt-1">
-                        <input type="file" name="featured_image" id="featured_image" 
-                               class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300"
-                               accept="image/*">
+                    <!-- Images -->
+                    <div>
+                        <label for="images" class="block text-sm font-medium text-gray-700">Images</label>
+                        <div class="mt-1 flex flex-col items-center">
+                            <div class="w-full flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md relative cursor-pointer hover:border-[#157e74]">
+                                <div class="space-y-1 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <div class="flex text-sm text-gray-600">
+                                        <label for="images" class="relative cursor-pointer bg-white rounded-md font-medium text-[#157e74] hover:text-[#1a9587] focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-[#157e74]">
+                                            <span>Télécharger des images</span>
+                                            <input id="images" name="images[]" type="file" class="sr-only" multiple accept="image/*" onchange="handleImagePreview(this)">
+                                        </label>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PNG, JPG, GIF jusqu'à 10MB</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Prévisualisation des images -->
+                            <div id="imagePreviewContainer" class="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            </div>
+                        </div>
+                        @error('images')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
-                    @error('featured_image')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
 
-                <div class="flex items-center">
-                    <input type="checkbox" name="is_published" id="is_published" value="1" 
-                           class="h-4 w-4 text-[#157e74] focus:ring-[#157e74] border-gray-300 rounded"
-                           {{ old('is_published') ? 'checked' : '' }}>
-                    <label for="is_published" class="ml-2 block text-sm text-[#157e74]">
-                        Publier immédiatement
-                    </label>
-                </div>
-
-                <div class="flex justify-end space-x-4">
-                    <a href="{{ route('articles.index') }}" 
-                       class="inline-flex items-center px-6 py-3 border-2 border-[#157e74] text-base font-medium rounded-full text-[#157e74] hover:bg-[#157e74] hover:text-white transition-all duration-200">
-                        Annuler
-                    </a>
-                    <button type="submit" 
-                            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-white bg-[#157e74] hover:bg-[#279078] transition-all duration-200">
-                        Créer l'article
-                    </button>
-                </div>
-            </form>
+                    <!-- Boutons -->
+                    <div class="flex justify-end space-x-3">
+                        <a href="{{ route('articles.index') }}" 
+                           class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#157e74]">
+                            Annuler
+                        </a>
+                        <button type="submit" 
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#157e74] hover:bg-[#1a9587] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#157e74]">
+                            Créer l'article
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+function handleImagePreview(input) {
+    const container = document.getElementById('imagePreviewContainer');
+    container.innerHTML = ''; // Nettoyer les prévisualisations existantes
+    
+    if (input.files) {
+        [...input.files].forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative group';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'w-full h-32 object-cover rounded-lg';
+                    
+                    const removeButton = document.createElement('button');
+                    removeButton.type = 'button';
+                    removeButton.className = 'absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity';
+                    removeButton.innerHTML = '×';
+                    removeButton.onclick = function() {
+                        div.remove();
+                    };
+                    
+                    div.appendChild(img);
+                    div.appendChild(removeButton);
+                    container.appendChild(div);
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+</script>
+@endpush
 @endsection 

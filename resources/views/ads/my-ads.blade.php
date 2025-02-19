@@ -27,12 +27,7 @@
                            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#157e74] focus:border-[#157e74]">
                 </div>
                 <div class="flex gap-4">
-                    <select class="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#157e74] focus:border-[#157e74]">
-                        <option value="">Tous les statuts</option>
-                        <option value="active">Actif</option>
-                        <option value="pending">En attente</option>
-                        <option value="completed">Complété</option>
-                    </select>
+                    
                     <select class="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#157e74] focus:border-[#157e74]">
                         <option value="">Trier par</option>
                         <option value="newest">Plus récent</option>

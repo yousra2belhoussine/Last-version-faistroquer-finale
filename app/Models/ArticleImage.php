@@ -5,15 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Image extends Model
+class ArticleImage extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'article_id',
         'path',
-        'ad_id',
+        'title',
+        'description',
         'order',
         'is_primary'
     ];
@@ -25,34 +26,27 @@ class Image extends Model
 
     protected $appends = ['url'];
 
-    /**
-     * Get the ad that owns the image.
-     */
-    public function ad(): BelongsTo
+    public function article()
     {
-        return $this->belongsTo(Ad::class);
+        return $this->belongsTo(Article::class);
     }
 
-    /**
-     * Get the full URL of the image.
-     */
     public function getUrlAttribute()
     {
         if (empty($this->path)) {
-            return asset('images/default-ad-image.png');
+            return asset('images/default-article-image.png');
         }
         return Storage::url($this->path);
     }
 
-    /**
-     * Delete the image file when the model is deleted.
-     */
     protected static function boot()
     {
         parent::boot();
 
         static::deleting(function ($image) {
-            Storage::disk('public')->delete($image->path);
+            if ($image->path) {
+                Storage::disk('public')->delete($image->path);
+            }
         });
     }
-}
+} 

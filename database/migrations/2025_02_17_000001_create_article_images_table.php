@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('images', function (Blueprint $table) {
+        Schema::create('article_images', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ad_id')->constrained()->onDelete('cascade');
-            $table->string('image_path')->nullable();
+            $table->foreignId('article_id')->constrained()->onDelete('cascade');
+            $table->string('path')->nullable();
             $table->string('title')->nullable();
             $table->text('description')->nullable();
             $table->integer('order')->default(0);
@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamps();
             
             // Index pour optimiser les requêtes
-            $table->index('ad_id');
+            $table->index('article_id');
             $table->index('is_primary');
         });
     }
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('images');
+        Schema::dropIfExists('article_images');
     }
 }; 

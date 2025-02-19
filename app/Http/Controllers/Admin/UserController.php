@@ -12,21 +12,28 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        // Filtrage par type d'utilisateur
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
-
-        // Recherche par nom ou email
+        // Recherche
         if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
-        $users = $query->paginate(20);
+        // Filtre par rôle
+        if ($request->has('role') && $request->role !== '') {
+            $query->where('is_admin', $request->role === 'admin');
+        }
+
+        // Filtre par statut
+        if ($request->has('status') && $request->status !== '') {
+            $query->where('status', $request->status);
+        }
+
+        // Pagination avec 10 utilisateurs par page
+        $users = $query->orderBy('created_at', 'desc')->paginate(10);
+
         return view('admin.users.index', compact('users'));
     }
 
@@ -82,5 +89,37 @@ class UserController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Suspension levée avec succès');
+    }
+
+    public function edit(User $user)
+    {
+        return view('admin.users.edit', compact('user'));
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'is_admin' => 'boolean',
+        ]);
+
+        $user->update($validated);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Utilisateur mis à jour avec succès.');
+    }
+
+    public function destroy(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Utilisateur supprimé avec succès.');
     }
 } 

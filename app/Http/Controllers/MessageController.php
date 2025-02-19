@@ -82,8 +82,12 @@ class MessageController extends Controller
                 }, 'lastMessage'])
                 ->withCount(['messages as unread_count' => function ($query) {
                     $query->where('sender_id', '!=', auth()->id())
-                        ->whereDoesntHave('reads', function($q) {
-                            $q->where('user_id', auth()->id());
+                        ->where('created_at', '>', function($subquery) {
+                            $subquery->select('last_read_at')
+                                ->from('conversation_participants')
+                                ->whereColumn('conversation_id', 'messages.conversation_id')
+                                ->where('user_id', auth()->id())
+                                ->limit(1);
                         });
                 }])
                 ->orderByDesc(function ($query) {
@@ -97,6 +101,9 @@ class MessageController extends Controller
 
             \Log::info('Nombre de conversations dans la sidebar: ' . $conversations->count());
 
+            // Marquer la conversation comme lue AVANT de récupérer les messages
+            $conversation->markAsRead(auth()->id());
+
             // Récupérer les messages de la conversation actuelle avec les expéditeurs et leurs photos
             $messages = $conversation->messages()
                 ->with(['sender' => function($query) {
@@ -106,9 +113,6 @@ class MessageController extends Controller
                 ->get();
 
             \Log::info('Nombre de messages dans la conversation: ' . $messages->count());
-            
-            // Marquer la conversation comme lue
-            $conversation->markAsRead(auth()->id());
             
             \Log::info('=== Fin de la méthode show ===');
 
@@ -272,5 +276,42 @@ class MessageController extends Controller
             ->get();
 
         return view('messages.active_users', compact('activeUsers'));
+    }
+
+    public function fetchMessages(Conversation $conversation)
+    {
+        // Vérifier si l'utilisateur est participant
+        if (!$conversation->participants->contains(auth()->id())) {
+            return response()->json(['success' => false, 'message' => 'Non autorisé'], 403);
+        }
+
+        // Marquer la conversation comme lue
+        $conversation->markAsRead(auth()->id());
+
+        // Récupérer les messages avec leurs expéditeurs
+        $messages = $conversation->messages()
+            ->with(['sender' => function($query) {
+                $query->select('id', 'name', 'profile_photo_path');
+            }])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        // Formater les messages pour la réponse JSON
+        $formattedMessages = $messages->map(function($message) {
+            return [
+                'id' => $message->id,
+                'content' => $message->content,
+                'sender_id' => $message->sender_id,
+                'sender_name' => $message->sender->name,
+                'sender_avatar' => $message->sender->profile_photo_path,
+                'is_own_message' => $message->sender_id === auth()->id(),
+                'created_at' => $message->created_at->format('H:i'),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'messages' => $formattedMessages
+        ]);
     }
 } 

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Article extends Model
@@ -11,25 +13,34 @@ class Article extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'title',
-        'slug',
-        'excerpt',
-        'content',
-        'featured_image',
-        'category',
-        'is_published',
-        'published_at',
+        'description',
+        'category_id',
+        'user_id',
+        'status',
+        'approved_at',
+        'rejected_at'
     ];
 
     protected $casts = [
-        'is_published' => 'boolean',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'published_at' => 'datetime',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(ArticleImage::class);
     }
 
     public function setTitleAttribute($value)
@@ -38,10 +49,33 @@ class Article extends Model
         $this->attributes['slug'] = Str::slug($value);
     }
 
-    public function scopePublished($query)
+    public function scopeApproved($query)
     {
-        return $query->where('is_published', true)
-                    ->whereNotNull('published_at')
-                    ->where('published_at', '<=', now());
+        return $query->where('status', 'approved');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', 'rejected');
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
     }
 } 

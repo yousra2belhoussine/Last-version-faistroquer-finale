@@ -710,30 +710,49 @@ class AdController extends Controller
         \Log::info('Final ad data:', $adData);
 
         try {
+            DB::beginTransaction();
+            
+            // Extraire les images avant de créer l'annonce
+            $images = $adData['images'] ?? [];
+            unset($adData['images']);  // Retirer les images des données de l'annonce
+            
             // Créer l'annonce
             $ad = Auth::user()->ads()->create($adData);
 
             // Gérer les images si présentes
-            if (isset($adData['images'])) {
-                foreach ($adData['images'] as $image) {
-                    $ad->images()->create(['image_path' => $image]);
+            if (!empty($images)) {
+                foreach ($images as $imagePath) {
+                    // Créer un nouveau nom de fichier unique
+                    $newPath = 'ads/' . $ad->id . '/' . basename($imagePath);
+                    
+                    // Déplacer l'image vers le dossier spécifique de l'annonce
+                    if (Storage::disk('public')->exists($imagePath)) {
+                        Storage::disk('public')->move($imagePath, $newPath);
+                        
+                        // Créer l'entrée d'image dans la base de données
+                        $ad->images()->create([
+                            'path' => $newPath
+                        ]);
+                    }
                 }
             }
+
+            DB::commit();
 
             // Nettoyer la session
             $request->session()->forget('ad_data');
 
             return redirect()->route('ads.show', $ad)
-                ->with('success', 'Votre annonce a été créée avec succès !');
+                ->with('success', 'Votre annonce a été créée avec succès et est en attente de validation.');
 
         } catch (\Exception $e) {
-            \Log::error('Error creating ad:', [
+            DB::rollBack();
+            \Log::error('Erreur lors de la création de l\'annonce:', [
                 'error' => $e->getMessage(),
-                'data' => $adData
+                'trace' => $e->getTraceAsString()
             ]);
-
-            return redirect()->back()
-                ->with('error', 'Une erreur est survenue lors de la création de l\'annonce. Veuillez réessayer.');
+            
+            return back()->with('error', 'Une erreur est survenue lors de la création de l\'annonce. Veuillez réessayer.');
         }
     }
 }

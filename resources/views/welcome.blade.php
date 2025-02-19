@@ -90,16 +90,16 @@
 
         <!-- Ads Grid -->
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            @foreach($recentAds as $ad)
+            @foreach($recentAds->where('status', 'active') as $ad)
             <a href="{{ route('ads.show', $ad) }}" 
                class="group bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transform hover:scale-[1.02] transition-all">
                 <div class="aspect-w-4 aspect-h-3">
                     @if($ad->images->count() > 0)
-                        <img src="{{ asset('storage/' . $ad->images->first()->path) }}" 
+                        <img src="{{ $ad->images->first()->url }}" 
                              alt="{{ $ad->title }}" 
-                             class="object-cover w-full h-full">
+                             class="object-cover w-full h-48 rounded-t-lg">
                     @else
-                        <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center rounded-t-lg">
                             <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>

@@ -1,39 +1,43 @@
 <!-- Navigation -->
-<nav x-data="{ mobileMenuOpen: false }" class="bg-gradient-to-r from-[#157e74] to-[#279078] border-b border-[#a3cca8]/20">
+<nav x-data="{ mobileMenuOpen: false }" class="bg-gradient-to-r from-[#157e74] to-[#279078] border-b border-[#a3cca8]/20 sticky top-0 z-50 backdrop-blur-sm bg-opacity-95">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <!-- Logo and Primary Navigation -->
             <div class="flex items-center flex-1">
                 <!-- Logo -->
                 <div class="flex-shrink-0 flex items-center">
-                    <a href="{{ route('home') }}" class="flex items-center transition-transform duration-200 hover:scale-105">
-                        <div class="bg-white p-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                    <a href="{{ route('home') }}" class="flex items-center transition-transform duration-300 hover:scale-105">
+                        <div class="bg-white p-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
                             <img src="{{ asset('images/logo-faistroquerfr.svg') }}" alt="FAISTROQUER" class="h-8 w-auto">
                         </div>
                     </a>
                 </div>
 
-                <!-- Search Bar -->
-                <div class="flex-1 max-w-3xl mx-8 hidden sm:block">
-                    <x-search-bar />
-                </div>
-
                 <!-- Primary Navigation -->
-                <div class="hidden lg:flex space-x-8">
-                    <a href="{{ route('home') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-200 {{ request()->routeIs('home') ? 'border-white' : 'border-transparent' }}">
+                <div class="hidden lg:flex space-x-8 ml-8">
+                    <a href="{{ route('home') }}" class="inline-flex items-center px-3 py-1 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-300 {{ request()->routeIs('home') ? 'border-white' : 'border-transparent' }} hover:scale-105">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
                         {{ __('Accueil') }}
                     </a>
-                    <a href="{{ route('ads.index') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-200 {{ request()->routeIs('ads.*') ? 'border-white' : 'border-transparent' }}">
+                    <a href="{{ route('ads.index') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-300 {{ request()->routeIs('ads.*') ? 'border-white' : 'border-transparent' }} hover:scale-105">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
                         {{ __('Annonces') }}
                     </a>
-                    <a href="{{ route('articles.index') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-200 {{ request()->routeIs('articles.*') ? 'border-white' : 'border-transparent' }}">
+                    <a href="{{ route('articles.index') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-300 {{ request()->routeIs('articles.*') ? 'border-white' : 'border-transparent' }} hover:scale-105">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                        </svg>
                         {{ __('Blog') }}
                     </a>
                     @if(auth()->check() && auth()->user()->isAdmin())
-                    <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-200 {{ request()->routeIs('admin.*') ? 'border-white' : 'border-transparent' }}">
-                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-white hover:text-[#a3cca8] border-b-2 transition-all duration-300 {{ request()->routeIs('admin.*') ? 'border-white' : 'border-transparent' }} hover:scale-105">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                         {{ __('Administration') }}
                     </a>
@@ -42,17 +46,17 @@
             </div>
 
             <!-- Secondary Navigation -->
-            <div class="hidden lg:flex lg:items-center lg:ml-6 space-x-6">
+            <div class="hidden lg:flex lg:items-center lg:ml-6 space-x-4">
                 @auth
                     <!-- Messages -->
-                    <a href="{{ route('messages.index') }}" class="relative p-2 text-white hover:text-[#a3cca8] transition-colors duration-200">
+                    <a href="{{ route('messages.index') }}" class="relative p-2 text-white hover:text-[#a3cca8] transition-all duration-300 hover:scale-110">
                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
                         </svg>
                         @if(auth()->user()->unreadMessages()->count() > 0)
-                            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                            <span class="absolute -top-1 -right-1 flex h-5 w-5">
                                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-4 w-4 bg-white text-[#157e74] text-xs font-bold items-center justify-center">
+                                <span class="relative inline-flex rounded-full h-5 w-5 bg-white text-[#157e74] text-xs font-bold items-center justify-center">
                                     {{ auth()->user()->unreadMessages()->count() }}
                                 </span>
                             </span>
@@ -118,6 +122,12 @@
                                     </svg>
                                     {{ __('Mes annonces') }}
                                 </a>
+                                <a href="{{ route('articles.my') }}" class="group flex items-center px-4 py-2 text-sm text-[#157e74] hover:bg-[#a3cca8]/10">
+                                    <svg class="mr-3 h-5 w-5 text-[#157e74] group-hover:text-[#279078]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                    </svg>
+                                    {{ __('Mes articles') }}
+                                </a>
                                 <a href="{{ route('profile.badges') }}" class="group flex items-center px-4 py-2 text-sm text-[#157e74] hover:bg-[#a3cca8]/10">
                                     <svg class="mr-3 h-5 w-5 text-[#157e74] group-hover:text-[#279078]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -139,10 +149,10 @@
                         </div>
                     </div>
                 @else
-                    <a href="{{ route('login') }}" class="text-white hover:text-[#a3cca8] text-sm font-medium px-4 py-2 rounded-full border-2 border-white/30 hover:border-white transition-all duration-200">
+                    <a href="{{ route('login') }}" class="text-white hover:text-[#a3cca8] text-sm font-medium px-4 py-2 rounded-lg border-2 border-white/30 hover:border-white transition-all duration-300 hover:scale-105">
                         {{ __('Se connecter') }}
                     </a>
-                    <a href="{{ route('register') }}" class="inline-flex items-center px-6 py-2 border-2 border-white text-sm font-medium rounded-full text-[#157e74] bg-white hover:bg-[#a3cca8] hover:border-[#a3cca8] hover:text-white transition-all duration-200">
+                    <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 border-2 border-white text-sm font-medium rounded-lg text-[#157e74] bg-white hover:bg-[#a3cca8] hover:border-[#a3cca8] hover:text-white transition-all duration-300 hover:scale-105">
                         {{ __('S\'inscrire') }}
                     </a>
                 @endauth
@@ -172,11 +182,6 @@
          x-transition:leave-start="transform opacity-100 scale-100"
          x-transition:leave-end="transform opacity-0 scale-95"
          class="lg:hidden bg-white shadow-lg">
-        <!-- Mobile Search -->
-        <div class="px-4 pt-2 pb-3">
-            <x-search-bar />
-        </div>
-
         <!-- Mobile Navigation -->
         <div class="border-t border-gray-200">
             <div class="pt-2 pb-3 space-y-1">
@@ -263,6 +268,12 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
                         {{ __('Mes annonces') }}
+                    </a>
+                    <a href="{{ route('articles.my') }}" class="flex items-center px-4 py-2 text-base font-medium text-[#157e74] hover:text-[#279078] hover:bg-[#a3cca8]/10">
+                        <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        </svg>
+                        {{ __('Mes articles') }}
                     </a>
                     <a href="{{ route('profile.badges') }}" class="flex items-center px-4 py-2 text-base font-medium text-[#157e74] hover:text-[#279078] hover:bg-[#a3cca8]/10">
                         <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
