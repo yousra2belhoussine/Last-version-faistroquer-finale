@@ -41,7 +41,14 @@ class Image extends Model
         if (empty($this->path)) {
             return asset('images/default-ad-image.png');
         }
-        return Storage::url($this->path);
+
+        // Si le chemin commence déjà par 'storage/', on ne l'ajoute pas deux fois
+        if (str_starts_with($this->path, 'storage/')) {
+            return asset($this->path);
+        }
+
+        // Sinon, on s'assure que le chemin est correctement formaté pour le stockage public
+        return asset('storage/' . $this->path);
     }
 
     /**
@@ -52,7 +59,9 @@ class Image extends Model
         parent::boot();
 
         static::deleting(function ($image) {
-            Storage::disk('public')->delete($image->path);
+            if ($image->path) {
+                Storage::disk('public')->delete($image->path);
+            }
         });
     }
 }

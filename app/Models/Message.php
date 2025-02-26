@@ -11,9 +11,14 @@ class Message extends Model
     use HasFactory;
 
     protected $fillable = [
-        'conversation_id',
         'sender_id',
+        'recipient_id',
         'content'
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'read_at' => 'datetime'
     ];
 
     protected $with = ['sender'];
@@ -26,6 +31,11 @@ class Message extends Model
     public function sender()
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function recipient()
+    {
+        return $this->belongsTo(User::class, 'recipient_id');
     }
 
     public function reads()

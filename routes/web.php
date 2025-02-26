@@ -67,7 +67,6 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/web/pages.php';
 require __DIR__.'/web/profile.php';
 require __DIR__.'/web/ads.php';
-require __DIR__.'/web/messaging.php';
 
 // Propositions routes
 Route::middleware('auth')->group(function () {
@@ -84,8 +83,5 @@ Route::middleware('auth')->group(function () {
 
 // Messages routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
-    Route::get('/messages/{conversation}', [MessageController::class, 'show'])->name('messages.show');
-    Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store');
-    Route::get('/messages/{conversation}/fetch', [MessageController::class, 'fetchMessages'])->name('messages.fetch');
+    require __DIR__.'/web/messaging.php';
 });

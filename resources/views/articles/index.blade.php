@@ -48,8 +48,8 @@
                     <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                         @if($article->images->isNotEmpty())
                             <div class="relative h-48 rounded-t-lg overflow-hidden">
-                                <img src="{{ Storage::url($article->images->first()->path) }}" 
-                                     alt="Image de l'article" 
+                                <img src="{{ $article->images->first()->url }}" 
+                                     alt="{{ $article->title }}" 
                                      class="w-full h-full object-cover">
                                 <div class="absolute top-2 right-2">
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full

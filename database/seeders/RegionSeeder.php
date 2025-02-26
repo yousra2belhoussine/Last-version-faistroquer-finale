@@ -13,28 +13,14 @@ class RegionSeeder extends Seeder
     {
         $regions = [
             'Île-de-France' => [
-                'Paris', 'Seine-et-Marne', 'Yvelines', 'Essonne',
-                'Hauts-de-Seine', 'Seine-Saint-Denis', 'Val-de-Marne', "Val-d'Oise"
-            ],
-            'Auvergne-Rhône-Alpes' => [
-                'Ain', 'Allier', 'Ardèche', 'Cantal', 'Drôme', 'Isère',
-                'Loire', 'Haute-Loire', 'Puy-de-Dôme', 'Rhône', 'Savoie', 'Haute-Savoie'
-            ],
-            'Nouvelle-Aquitaine' => [
-                'Charente', 'Charente-Maritime', 'Corrèze', 'Creuse', 'Dordogne',
-                'Gironde', 'Landes', 'Lot-et-Garonne', 'Pyrénées-Atlantiques',
-                'Deux-Sèvres', 'Vienne', 'Haute-Vienne'
-            ],
-            'Bourgogne-Franche-Comté' => [
-                'Côte-d\'Or', 'Doubs', 'Jura', 'Nièvre', 'Haute-Saône',
-                'Saône-et-Loire', 'Yonne', 'Territoire de Belfort'
-            ],
-            'Bretagne' => [
-                'Côtes-d\'Armor', 'Finistère', 'Ille-et-Vilaine', 'Morbihan'
-            ],
-            'Centre-Val de Loire' => [
-                'Cher', 'Eure-et-Loir', 'Indre', 'Indre-et-Loire',
-                'Loir-et-Cher', 'Loiret'
+                ['name' => 'Paris', 'code' => '75'],
+                ['name' => 'Seine-et-Marne', 'code' => '77'],
+                ['name' => 'Yvelines', 'code' => '78'],
+                ['name' => 'Essonne', 'code' => '91'],
+                ['name' => 'Hauts-de-Seine', 'code' => '92'],
+                ['name' => 'Seine-Saint-Denis', 'code' => '93'],
+                ['name' => 'Val-de-Marne', 'code' => '94'],
+                ['name' => "Val-d'Oise", 'code' => '95']
             ]
         ];
 
@@ -44,11 +30,12 @@ class RegionSeeder extends Seeder
                 'slug' => Str::slug($regionName)
             ]);
             
-            foreach ($departments as $departmentName) {
+            foreach ($departments as $department) {
                 Department::create([
-                    'name' => $departmentName,
+                    'name' => $department['name'],
                     'region_id' => $region->id,
-                    'slug' => Str::slug($departmentName)
+                    'slug' => Str::slug($department['name']),
+                    'code' => $department['code']
                 ]);
             }
         }

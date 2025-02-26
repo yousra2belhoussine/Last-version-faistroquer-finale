@@ -1,4 +1,4 @@
-@extends('layouts.app')
+{8057B7E1-B55A-4A30-91DB-81FDABBFA1EC}.png@extends('layouts.app')
 
 @section('content')
 <div class="py-12">
@@ -185,7 +185,7 @@
                         <div class="grid grid-cols-2 gap-4 mb-4">
                             @forelse($ad->images as $image)
                                 <div class="relative">
-                                    <img src="{{ asset('storage/' . $image->image_path) }}" alt="" class="h-24 w-full object-cover rounded">
+                                    <img src="{{ $image->url }}" alt="" class="h-24 w-full object-cover rounded">
                                     <div class="absolute top-0 right-0 flex space-x-1">
                                         <input type="checkbox" name="delete_images[]" value="{{ $image->id }}" class="hidden" id="delete_image_{{ $image->id }}">
                                         <label for="delete_image_{{ $image->id }}" class="bg-red-500 text-white rounded-full p-1 cursor-pointer transform translate-x-1/2 -translate-y-1/2">

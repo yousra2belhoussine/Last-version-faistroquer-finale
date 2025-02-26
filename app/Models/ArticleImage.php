@@ -34,9 +34,11 @@ class ArticleImage extends Model
     public function getUrlAttribute()
     {
         if (empty($this->path)) {
-            return asset('images/default-article-image.png');
+            return asset('images/default-article-image.jpg');
         }
-        return Storage::url($this->path);
+        // Assurez-vous que le chemin commence par 'public/'
+        $path = str_starts_with($this->path, 'public/') ? $this->path : 'public/' . $this->path;
+        return asset('storage/' . str_replace('public/', '', $path));
     }
 
     protected static function boot()

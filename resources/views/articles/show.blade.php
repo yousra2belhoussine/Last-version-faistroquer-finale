@@ -20,7 +20,7 @@
                     @endif
                 @endif
                 @if($article->category)
-                    <span>{{ $article->category }}</span>
+                    <span>{{ $article->category->name }}</span>
                 @endif
                 @if(!$article->is_published)
                     <span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Brouillon</span>

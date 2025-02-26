@@ -46,10 +46,13 @@ class TestDataSeeder extends Seeder
         for ($i = 1; $i <= 4; $i++) {
             Article::create([
                 'title' => "Article Test $i",
-                'content' => "Contenu de l'article test numéro $i",
+                'slug' => Str::slug("Article Test $i"),
+                'description' => "Contenu de l'article test numéro $i",
                 'user_id' => $i <= 2 ? $user1->id : $user2->id,
                 'status' => 'approved',
-                'category' => 'news'
+                'category_id' => $category->id,
+                'is_published' => true,
+                'published_at' => now()
             ]);
         }
 

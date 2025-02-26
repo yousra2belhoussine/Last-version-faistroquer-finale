@@ -36,14 +36,34 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($articles as $article)
                     <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
-                        @if($article->images->isNotEmpty())
-                            <div class="relative h-48">
-                                <img src="{{ Storage::url($article->images->first()->path) }}" 
+                        <div class="relative h-48">
+                            @if($article->images->isNotEmpty())
+                                <img src="{{ $article->images->first()->url }}" 
                                      alt="{{ $article->title }}" 
-                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
-                                
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                     onerror="this.src='{{ asset('images/default-article-image.jpg') }}';">
+                            @else
+                                <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            @endif
+                            <div class="absolute top-2 right-2">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                    @if($article->status === 'approved') bg-green-100 text-green-800
+                                    @elseif($article->status === 'rejected') bg-red-100 text-red-800
+                                    @else bg-yellow-100 text-yellow-800 @endif">
+                                    @if($article->status === 'approved')
+                                        Approuvé
+                                    @elseif($article->status === 'rejected')
+                                        Rejeté
+                                    @else
+                                        En attente
+                                    @endif
+                                </span>
                             </div>
-                        @endif
+                        </div>
                         <div class="p-5">
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-sm font-medium text-[#157e74] bg-[#157e74]/10 px-3 py-1 rounded-full">

@@ -37,29 +37,33 @@
                 </div>
 
                 <div>
-                    <label for="content" class="block text-sm font-medium text-[#157e74]">Contenu</label>
+                    <label for="description" class="block text-sm font-medium text-[#157e74]">Description</label>
                     <div class="mt-1">
-                        <textarea name="content" id="content" rows="10" 
+                        <textarea name="description" id="description" rows="10" 
                                   class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300 rounded-md"
-                                  required>{{ old('content', $article->content) }}</textarea>
+                                  required>{{ old('description', $article->description) }}</textarea>
                     </div>
-                    @error('content')
+                    @error('description')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label for="category" class="block text-sm font-medium text-[#157e74]">Catégorie</label>
+                    <label for="category_id" class="block text-sm font-medium text-[#157e74]">Catégorie</label>
                     <div class="mt-1">
-                        <select name="category" id="category" 
-                                class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300 rounded-md">
+                        <select name="category_id" id="category_id" 
+                                class="shadow-sm focus:ring-[#157e74] focus:border-[#157e74] block w-full sm:text-sm border-gray-300 rounded-md"
+                                required>
                             <option value="">Sélectionnez une catégorie</option>
-                            <option value="Conseils" {{ old('category', $article->category) == 'Conseils' ? 'selected' : '' }}>Conseils</option>
-                            <option value="Tutoriels" {{ old('category', $article->category) == 'Tutoriels' ? 'selected' : '' }}>Tutoriels</option>
-                            <option value="Actualités" {{ old('category', $article->category) == 'Actualités' ? 'selected' : '' }}>Actualités</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" 
+                                    {{ old('category_id', $article->category_id) == $category->id ? 'selected' : '' }}>
+                                    {{ $category->name }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
-                    @error('category')
+                    @error('category_id')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>

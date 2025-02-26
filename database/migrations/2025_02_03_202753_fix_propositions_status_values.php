@@ -17,8 +17,19 @@ return new class extends Migration
             ->whereNotIn('status', ['pending', 'accepted', 'rejected', 'cancelled'])
             ->update(['status' => 'pending']);
 
-        // Now modify the column to add 'completed' status
-        DB::statement("ALTER TABLE propositions MODIFY COLUMN status ENUM('pending', 'accepted', 'rejected', 'cancelled', 'completed') DEFAULT 'pending'");
+        // Drop the existing trigger
+        DB::statement("DROP TRIGGER IF EXISTS check_proposition_status");
+
+        // Create new trigger with updated status values
+        DB::statement("CREATE TRIGGER check_proposition_status
+            BEFORE INSERT ON propositions
+            FOR EACH ROW
+            BEGIN
+                IF NEW.status NOT IN ('pending', 'accepted', 'rejected', 'cancelled', 'completed') THEN
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = 'Invalid status value';
+                END IF;
+            END;");
     }
 
     /**
@@ -31,7 +42,18 @@ return new class extends Migration
             ->where('status', 'completed')
             ->update(['status' => 'accepted']);
 
-        // Then revert the column definition
-        DB::statement("ALTER TABLE propositions MODIFY COLUMN status ENUM('pending', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending'");
+        // Drop the existing trigger
+        DB::statement("DROP TRIGGER IF EXISTS check_proposition_status");
+
+        // Create trigger with original status values
+        DB::statement("CREATE TRIGGER check_proposition_status
+            BEFORE INSERT ON propositions
+            FOR EACH ROW
+            BEGIN
+                IF NEW.status NOT IN ('pending', 'accepted', 'rejected', 'cancelled') THEN
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = 'Invalid status value';
+                END IF;
+            END;");
     }
 };

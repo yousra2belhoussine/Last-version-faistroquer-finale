@@ -30,6 +30,9 @@ class ArticleController extends Controller
             abort(404);
         }
 
+        // Charger les relations nécessaires
+        $article->load(['category', 'user', 'images']);
+
         if ($article->published_at) {
             $article->formatted_date = $article->published_at->format('d M Y');
         }
@@ -64,9 +67,14 @@ class ArticleController extends Controller
         // Gérer les images
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $path = $image->store('articles', 'public');
+                // Générer un nom unique pour l'image
+                $filename = uniqid('article_') . '.' . $image->getClientOriginalExtension();
+                // Sauvegarder l'image dans le dossier public/storage/articles
+                $path = $image->storeAs('articles', $filename, 'public');
+                // Créer l'enregistrement dans la base de données
                 $article->images()->create([
-                    'path' => $path
+                    'path' => $path,
+                    'title' => $image->getClientOriginalName()
                 ]);
             }
         }
@@ -78,7 +86,14 @@ class ArticleController extends Controller
     public function edit(Article $article)
     {
         $this->authorize('update', $article);
-        return view('articles.edit', compact('article'));
+        
+        // Récupérer toutes les catégories
+        $categories = Category::all();
+        
+        // Charger les relations nécessaires
+        $article->load(['category', 'images']);
+        
+        return view('articles.edit', compact('article', 'categories'));
     }
 
     public function update(Request $request, Article $article)
@@ -87,26 +102,30 @@ class ArticleController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|max:255',
-            'content' => 'required',
+            'description' => 'required',
+            'category_id' => 'required|exists:categories,id',
             'excerpt' => 'nullable',
-            'category' => 'nullable',
-            'featured_image' => 'nullable|image|max:2048',
-            'is_published' => 'boolean',
+            'featured_image' => 'nullable|image|max:2048'
         ]);
 
+        // Gérer l'image mise en avant si elle est fournie
         if ($request->hasFile('featured_image')) {
             if ($article->featured_image) {
                 Storage::disk('public')->delete($article->featured_image);
             }
-            $path = $request->file('featured_image')->store('articles', 'public');
-            $validated['featured_image'] = $path;
+            $validated['featured_image'] = $request->file('featured_image')->store('articles', 'public');
         }
 
-        $validated['slug'] = Str::slug($validated['title']);
+        // Gérer le statut de publication
+        $validated['is_published'] = $request->has('is_published');
+        
+        // Mettre à jour la date de publication si l'article est publié pour la première fois
         if (!$article->is_published && $validated['is_published']) {
             $validated['published_at'] = now();
         }
 
+        $validated['slug'] = Str::slug($validated['title']);
+        
         $article->update($validated);
 
         return redirect()->route('articles.show', $article)

@@ -237,8 +237,14 @@ class AdController extends Controller
                             // Générer un nom unique pour l'image
                             $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
                             
+                            // Créer le dossier pour l'annonce si nécessaire
+                            $adFolder = 'ads/' . $ad->id;
+                            if (!Storage::disk('public')->exists($adFolder)) {
+                                Storage::disk('public')->makeDirectory($adFolder);
+                            }
+                            
                             // Stocker l'image dans le dossier public/storage/ads/{ad_id}
-                            $path = $image->storeAs('ads/' . $ad->id, $fileName, 'public');
+                            $path = $image->storeAs($adFolder, $fileName, 'public');
                             
                             // Log pour déboguer
                             \Log::info('Image upload:', [
@@ -249,7 +255,7 @@ class AdController extends Controller
                             
                             // Créer l'entrée dans la base de données
                             $ad->images()->create([
-                                'image_path' => $path
+                                'path' => $path
                             ]);
                         } catch (\Exception $e) {
                             \Log::error('Erreur lors du téléchargement de l\'image', [
@@ -343,8 +349,14 @@ class AdController extends Controller
                         // Générer un nom unique pour l'image
                         $fileName = uniqid() . '.' . $image->getClientOriginalExtension();
                         
+                        // Créer le dossier pour l'annonce si nécessaire
+                        $adFolder = 'ads/' . $ad->id;
+                        if (!Storage::disk('public')->exists($adFolder)) {
+                            Storage::disk('public')->makeDirectory($adFolder);
+                        }
+                        
                         // Stocker l'image dans le dossier public/storage/ads/{ad_id}
-                        $path = $image->storeAs('ads/' . $ad->id, $fileName, 'public');
+                        $path = $image->storeAs($adFolder, $fileName, 'public');
                         
                         // Log pour déboguer
                         \Log::info('Image upload:', [
@@ -355,7 +367,7 @@ class AdController extends Controller
                         
                         // Créer l'entrée dans la base de données
                         $ad->images()->create([
-                            'image_path' => $path
+                            'path' => $path
                         ]);
                     } catch (\Exception $e) {
                         \Log::error('Erreur lors du téléchargement de l\'image', [
@@ -373,7 +385,7 @@ class AdController extends Controller
             foreach ($request->delete_images as $imageId) {
                 $image = $ad->images()->find($imageId);
                 if ($image) {
-                    Storage::disk('public')->delete($image->image_path);
+                    Storage::disk('public')->delete($image->path);
                     $image->delete();
                 }
             }

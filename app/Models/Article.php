@@ -19,7 +19,12 @@ class Article extends Model
         'user_id',
         'status',
         'approved_at',
-        'rejected_at'
+        'rejected_at',
+        'is_published',
+        'published_at',
+        'excerpt',
+        'featured_image',
+        'slug'
     ];
 
     protected $casts = [

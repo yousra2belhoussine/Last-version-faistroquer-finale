@@ -63,7 +63,7 @@
                                     Décrivez ce que vous proposez et ce que vous recherchez. Ajoutez des photos de qualité pour augmenter vos chances d'échange.
                                 </p>
                                 <div class="mt-6">
-                                    <a href="{{ route('ads.create') }}" 
+                                    <a href="{{ route('ads.create.step1') }}"
                                        class="inline-flex items-center px-6 py-3 rounded-full text-base font-medium text-white bg-[#35a79b] hover:bg-[#2c8d83] transition-colors shadow-sm hover:shadow">
                                         Créer une annonce
                                         <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

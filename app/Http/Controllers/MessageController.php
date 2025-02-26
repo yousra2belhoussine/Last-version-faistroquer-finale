@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Message;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
 {
@@ -127,19 +128,58 @@ class MessageController extends Controller
 
     public function store(Request $request, Conversation $conversation)
     {
-        // Vérifier si l'utilisateur est participant
-        abort_if(!$conversation->participants->contains(auth()->id()), 403);
+        try {
+            // Valider les données
+            $validated = $request->validate([
+                'content' => 'required|string|max:1000',
+                'recipient_id' => 'required|exists:users,id'
+            ]);
 
-        $validated = $request->validate([
-            'content' => 'required|string|max:1000',
-        ]);
+            // Vérifier que l'utilisateur est participant à la conversation
+            if (!$conversation->participants->contains(auth()->id())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vous n\'êtes pas autorisé à envoyer des messages dans cette conversation.'
+                ], 403);
+            }
 
-        $message = $conversation->messages()->create([
-            'sender_id' => auth()->id(),
-            'content' => $validated['content'],
-        ]);
+            // Vérifier que le destinataire est l'autre participant de la conversation
+            if (!$conversation->participants->contains($validated['recipient_id'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Le destinataire n\'est pas un participant de cette conversation.'
+                ], 422);
+            }
 
-        return back()->with('success', 'Message envoyé');
+            // Créer le message
+            $message = $conversation->messages()->create([
+                'sender_id' => auth()->id(),
+                'content' => $validated['content']
+            ]);
+
+            // Charger les relations nécessaires
+            $message->load('sender');
+
+            // Générer le HTML du message
+            $messageHtml = view('messages.single-message', ['message' => $message])->render();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Message envoyé avec succès',
+                'html' => $messageHtml
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de l\'envoi du message:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de l\'envoi du message.'
+            ], 500);
+        }
     }
 
     public function create()

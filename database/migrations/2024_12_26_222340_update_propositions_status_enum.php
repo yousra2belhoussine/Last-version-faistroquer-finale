@@ -12,7 +12,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE propositions MODIFY COLUMN status ENUM('pending', 'accepted', 'rejected', 'cancelled', 'completed') DEFAULT 'pending'");
+        Schema::table('propositions', function (Blueprint $table) {
+            // Supprimer l'ancienne colonne et la recréer avec la nouvelle contrainte
+            $table->dropColumn('status');
+            $table->string('status')->default('pending')->after('id');
+        });
+
+        // Ajouter la contrainte CHECK pour simuler un ENUM
+        DB::statement("CREATE TRIGGER check_proposition_status
+            BEFORE INSERT ON propositions
+            FOR EACH ROW
+            BEGIN
+                IF NEW.status NOT IN ('pending', 'accepted', 'rejected', 'cancelled', 'completed') THEN
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = 'Invalid status value';
+                END IF;
+            END;");
     }
 
     /**
@@ -20,6 +35,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE propositions MODIFY COLUMN status ENUM('pending', 'accepted', 'rejected', 'cancelled') DEFAULT 'pending'");
+        // Supprimer le trigger
+        DB::statement("DROP TRIGGER IF EXISTS check_proposition_status");
+
+        Schema::table('propositions', function (Blueprint $table) {
+            $table->dropColumn('status');
+            $table->string('status')->default('pending')->after('id');
+        });
     }
 };

@@ -153,9 +153,9 @@
                         <form action="{{ route('messages.store', $conversation) }}" 
                               method="POST" 
                               class="flex items-center space-x-4" 
-                              id="message-form"
-                              data-conversation-id="{{ $conversation->id }}">
+                              id="message-form">
                             @csrf
+                            <input type="hidden" name="recipient_id" value="{{ $otherParticipant->id }}">
                             <input type="text" 
                                    name="content" 
                                    id="message-input"
@@ -241,7 +241,6 @@
         const messagesContainer = document.getElementById('messages-container');
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('message-input');
-        const conversationLinks = document.querySelectorAll('.conversation-link');
 
         // Fonction pour faire défiler jusqu'en bas
         function scrollToBottom() {
@@ -253,116 +252,72 @@
         // Faire défiler jusqu'en bas au chargement initial
         scrollToBottom();
 
-        // Observer les changements dans le conteneur de messages
-        const observer = new MutationObserver(scrollToBottom);
-        if (messagesContainer) {
-            observer.observe(messagesContainer, { childList: true, subtree: true });
-        }
-
-        // Mettre à jour les notifications
-        function updateNotifications() {
-            // Supprimer le badge de la conversation active
-            const activeConversation = document.querySelector('.conversation-link.active');
-            if (activeConversation) {
-                const badge = activeConversation.querySelector('.notification-badge');
-                if (badge) {
-                    badge.remove();
-                }
-            }
-        }
-
-        // Appeler updateNotifications au chargement de la page
-        updateNotifications();
-
-        // Ajouter des écouteurs d'événements pour les liens de conversation
-        conversationLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                // Supprimer la classe active de tous les liens
-                conversationLinks.forEach(l => l.classList.remove('active'));
-                // Ajouter la classe active au lien cliqué
-                this.classList.add('active');
-                // Mettre à jour les notifications
-                updateNotifications();
-            });
-        });
-
         // Gérer la soumission du formulaire
         if (messageForm) {
             messageForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                const formData = new FormData(messageForm);
-                const messageContent = messageInput.value.trim();
-                
-                if (!messageContent) return;
+                const content = messageInput.value.trim();
+                if (!content) return;
+
+                const recipientId = messageForm.querySelector('input[name="recipient_id"]').value;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+                if (!csrfToken) {
+                    console.error('CSRF token not found');
+                    alert('Erreur de sécurité : CSRF token manquant');
+                    return;
+                }
+
+                // Désactiver le formulaire pendant l'envoi
+                const submitButton = messageForm.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                messageInput.disabled = true;
 
                 // Envoyer le message via AJAX
                 fetch(messageForm.action, {
                     method: 'POST',
-                    body: formData,
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    }
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        recipient_id: recipientId
+                    })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
-                        messageInput.value = '';
-                        // Recharger les messages sans recharger toute la page
-                        fetchLatestMessages();
+                        // Ajouter le nouveau message au conteneur
+                        messagesContainer.insertAdjacentHTML('beforeend', data.html);
+                        
+                        // Réinitialiser le formulaire
+                        messageForm.reset();
+                        
+                        // Faire défiler jusqu'au nouveau message
                         scrollToBottom();
+                    } else {
+                        throw new Error(data.message || 'Erreur lors de l\'envoi du message');
                     }
                 })
                 .catch(error => {
                     console.error('Erreur:', error);
+                    alert(error.message || 'Une erreur est survenue lors de l\'envoi du message');
+                })
+                .finally(() => {
+                    // Réactiver le formulaire
+                    submitButton.disabled = false;
+                    messageInput.disabled = false;
+                    messageInput.focus();
                 });
             });
-        }
-
-        // Fonction pour récupérer les derniers messages
-        function fetchLatestMessages() {
-            const conversationId = messageForm.getAttribute('data-conversation-id');
-            if (!conversationId) return;
-
-            fetch(`/messages/${conversationId}/fetch`, {
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (messagesContainer) {
-                        // Mettre à jour les messages
-                        const messagesHtml = data.messages.map(message => createMessageHtml(message)).join('');
-                        messagesContainer.innerHTML = messagesHtml;
-                        scrollToBottom();
-                        // Mettre à jour les notifications après le chargement des messages
-                        updateNotifications();
-                    }
-                }
-            });
-        }
-
-        // Fonction pour créer le HTML d'un message
-        function createMessageHtml(message) {
-            const isOwnMessage = message.sender_id === {{ auth()->id() }};
-            const avatarHtml = message.sender_avatar 
-                ? `<img src="${message.sender_avatar}" alt="${message.sender_name}" class="h-8 w-8 rounded-full object-cover ring-2 ring-[#35a79b]/20 shadow-md">`
-                : `<div class="h-8 w-8 rounded-full bg-[#157e74] flex items-center justify-center text-white text-sm font-semibold ring-2 ring-[#35a79b]/20 shadow-md">${message.sender_name.charAt(0)}</div>`;
-
-            return `
-                <div class="flex ${isOwnMessage ? 'justify-end' : 'justify-start'} animate-fade-in">
-                    ${!isOwnMessage ? `<div class="flex-shrink-0 mr-3">${avatarHtml}</div>` : ''}
-                    <div class="${isOwnMessage ? 'bg-gradient-to-r from-[#157e74] to-[#279078] text-white' : 'bg-white text-gray-800'} rounded-2xl px-4 py-2 max-w-[70%] shadow-md">
-                        <p class="text-sm">${message.content}</p>
-                        <span class="text-xs ${isOwnMessage ? 'text-white/70' : 'text-gray-500'} block mt-1">
-                            ${message.created_at}
-                        </span>
-                    </div>
-                    ${isOwnMessage ? `<div class="flex-shrink-0 ml-3">${avatarHtml}</div>` : ''}
-                </div>
-            `;
         }
 
         // Écouter les événements de saisie

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen py-8 bg-gradient-to-br from-[#edf7f6] to-[#e5f5f3]">
+<div class="min-h-screen py-8 bg-gradient-to-br from-[#edf76] to-[#e5f5f3]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header Section -->
         <div class="flex justify-between items-center mb-8">
@@ -43,17 +43,15 @@
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 border border-[#35a79b]/20">
                     <!-- Image Container -->
                     <div class="aspect-w-16 aspect-h-9 relative group">
-                        @if($ad->images->count() > 0)
-                            <img src="{{ asset('storage/' . $ad->images->first()->image_path) }}" 
+                        @if($ad->images->isNotEmpty())
+                            <img src="{{ $ad->images->first()->url }}" 
                                  alt="{{ $ad->title }}" 
                                  class="w-full h-48 object-cover"
                                  onerror="this.src='{{ asset('images/default-ad-image.png') }}'">
                         @else
-                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
+                            <img src="{{ asset('images/default-ad-image.png') }}" 
+                                 alt="{{ $ad->title }}" 
+                                 class="w-full h-48 object-cover">
                         @endif
                         <!-- Status Badge -->
                         <div class="absolute top-4 right-4">
@@ -97,13 +95,7 @@
                                 </svg>
                                 {{ $ad->created_at->diffForHumans() }}
                             </span>
-                            <span class="text-gray-600">
-                                <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                {{ $ad->views_count ?? 0 }} vues
-                            </span>
+                            
                         </div>
                     </div>
                 </div>
